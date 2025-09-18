@@ -1,7 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -15,6 +15,8 @@ export default function RegisterPage() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,6 +58,7 @@ export default function RegisterPage() {
         setError(result.error);
       } else {
         console.log("User registered:", result);
+        router.replace('/login')
         // redirect ke dashboard atau tampilkan notifikasi sukses
       }
     } catch (err) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseServer";
+import { uploadFileToStorage } from "@/utils/supabaseStorage";
 
 export async function POST(req) {
   try {
@@ -39,22 +40,7 @@ export async function POST(req) {
 
     // 3️⃣ Upload avatar ke storage (jika ada)
     if (avatar && avatar.size > 0) {
-      const buffer = Buffer.from(await avatar.arrayBuffer());
-
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from("avatars")
-        .upload(`users/${userId}-${avatar.name}`, buffer, {
-          contentType: avatar.type,
-          upsert: true,
-        });
-
-      if (storageError) {
-        return NextResponse.json({ error: storageError.message }, { status: 400 });
-      }
-
-      avatarUrl = supabase.storage
-        .from("avatars")
-        .getPublicUrl(storageData.path).data.publicUrl;
+      avatarUrl = await uploadFileToStorage(avatar, `users/${userId}-avatar.png`);
     }
 
     // 4️⃣ Simpan data user ke tabel users (optional, bisa juga pakai metadata)

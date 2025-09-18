@@ -6,8 +6,8 @@ export const columns = [
     header: "Name",
   },
   {
-    header: "Image",
-    accessorKey: "image",
+    header: "Image URL",
+    accessorKey: "image_url",
     cell: ({ getValue }) => {
       const url = getValue();
       return url ? (

@@ -36,7 +36,7 @@ export default function LoginPage() {
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
-        router.replace("/dashboard");
+        router.replace("/dashboard/provinces");
       }
     } catch (err) {
       console.error(err);

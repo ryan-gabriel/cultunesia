@@ -15,31 +15,79 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function DataTable({ columns, data }) {
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+export function DataTable({ columns, data, onEdit, onDelete }) {
+  const enhancedColumns = [
+    ...columns,
+    {
+      id: "manage",
+      header: "Manage",
+      cell: ({ row }) => (
+        <Link href={`/dashboard/provinces/${row.original.slug}`} passHref>
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <Settings className="h-4 w-4" />
+            Manage
+          </Button>
+        </Link>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-28">
+            <Link href={`/dashboard/provinces/edit/${row.original.slug}`}>
+              <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
+                Edit
+              </DropdownMenuItem>
+            </Link>
+            <DropdownMenuItem onClick={() => onDelete?.(row.original)}>
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
   const table = useReactTable({
     data,
-    columns,
+    columns: enhancedColumns,
     getCoreRowModel: getCoreRowModel(),
   });
 
   return (
     <div className="overflow-hidden w-full rounded-md border">
-      <Table className={'w-full'}>
+      <Table className="w-full">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </TableHead>
+              ))}
             </TableRow>
           ))}
         </TableHeader>
@@ -59,7 +107,10 @@ export function DataTable({ columns, data }) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
+              <TableCell
+                colSpan={enhancedColumns.length}
+                className="h-24 text-center"
+              >
                 No results.
               </TableCell>
             </TableRow>

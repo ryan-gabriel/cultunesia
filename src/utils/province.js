@@ -3,7 +3,7 @@
  * @returns {Promise<Array>} - array data provinsi
  */
 export async function fetchProvinces() {
-  const res = await fetch(`/api/province`);
+  const res = await fetch(`/api/provinces`);
 
   if (!res.ok) {
     const errorData = await res.json();
@@ -23,7 +23,7 @@ export async function fetchProvinces() {
 export async function fetchProvinceBySlug(slug) {
   if (!slug) throw new Error("Slug provinsi wajib diisi");
 
-  const res = await fetch(`/api/province/${slug}`);
+  const res = await fetch(`/api/provinces/${slug}`);
 
   if (!res.ok) {
     const errorData = await res.json();
