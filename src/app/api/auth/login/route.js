@@ -1,4 +1,3 @@
-// src/app/api/login/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseServer";
 
@@ -25,7 +24,7 @@ export async function POST(req) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Cek apakah user sudah verifikasi email
+    // Pastikan email sudah diverifikasi
     if (!data.user.email_confirmed_at) {
       return NextResponse.json(
         { error: "Silakan verifikasi email sebelum login" },
@@ -33,11 +32,19 @@ export async function POST(req) {
       );
     }
 
-    return NextResponse.json({
+    const { access_token, refresh_token } = data.session; // ambil token dari session
+
+    const response = NextResponse.json({
       message: "Login berhasil",
       user: data.user,
-      session: data.session,
+      access_token,
+      refresh_token,
     });
+
+    response.cookies.set("sb-access-token", access_token, { httpOnly: true });
+    response.cookies.set("sb-refresh-token", refresh_token, { httpOnly: true });
+
+    return response;
   } catch (err) {
     console.error(err);
     return NextResponse.json(

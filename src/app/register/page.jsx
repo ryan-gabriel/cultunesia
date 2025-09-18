@@ -45,7 +45,7 @@ export default function RegisterPage() {
     if (form.avatar) formData.append("avatar", form.avatar);
 
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         body: formData,
       });

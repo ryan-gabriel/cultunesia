@@ -1,4 +1,3 @@
-// src/app/api/register/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseServer";
 

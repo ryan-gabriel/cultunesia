@@ -1,11 +1,15 @@
 "use client";
 
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,7 +21,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -28,11 +32,14 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error);
       } else {
-        console.log("Login berhasil:", data);
-        // redirect ke dashboard
-        // router.push("/dashboard") misalnya
+        await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+        router.replace("/dashboard");
       }
     } catch (err) {
+      console.error(err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -41,7 +48,9 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-lg dark:bg-gray-900">
-      <h2 className="text-3xl font-bold mb-6 text-center text-primary">Login</h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-primary">
+        Login
+      </h2>
 
       {error && (
         <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
