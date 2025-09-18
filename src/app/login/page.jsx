@@ -48,7 +48,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-lg dark:bg-gray-900">
-      <h2 className="text-3xl font-bold mb-6 text-center text-primary">
+      <h2 className="text-3xl font-bold mb-6 text-center text-primary-gold">
         Login
       </h2>
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -83,14 +83,14 @@ export default function LoginPage() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition"
+          className="w-full bg-primary-gold text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition"
         >
           {loading ? "Logging in..." : "Login"}
         </button>

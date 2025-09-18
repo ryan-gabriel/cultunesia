@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-lg dark:bg-gray-900">
-      <h2 className="text-3xl font-bold mb-6 text-center text-primary">
+      <h2 className="text-3xl font-bold mb-6 text-center text-primary-gold">
         Create Account
       </h2>
 
@@ -87,7 +87,7 @@ export default function RegisterPage() {
             value={form.fullName}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -102,7 +102,7 @@ export default function RegisterPage() {
             value={form.username}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -117,7 +117,7 @@ export default function RegisterPage() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -132,7 +132,7 @@ export default function RegisterPage() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -147,7 +147,7 @@ export default function RegisterPage() {
             value={form.confirmPassword}
             onChange={handleChange}
             required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
           />
         </div>
 
@@ -163,7 +163,7 @@ export default function RegisterPage() {
             file:mr-3 file:py-2 file:px-4 
             file:rounded-lg file:border-0 
             file:text-sm file:font-semibold 
-            file:bg-primary file:text-white 
+            file:bg-primary-gold file:text-white 
             hover:file:bg-yellow-600"
           />
           {preview && (
@@ -178,7 +178,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition"
+          className="w-full bg-primary-gold text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition"
         >
           {loading ? "Registering..." : "Register"}
         </button>

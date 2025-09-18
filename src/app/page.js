@@ -4,7 +4,7 @@
 //   return (
 //     <div className="w-full h-screen">
 //       <div className="w-full  overflow-hidden h-full flex justify-center items-center m-auto">
-//         <main className="w-full border border-primary rounded-xl shadow-xl shadow-primary">
+//         <main className="w-full border border-primary-gold rounded-xl shadow-xl shadow-primary-gold">
 //           <MapSvg />
 //         </main>
 //       </div>
@@ -41,7 +41,7 @@ export default function Home() {
       </button>
 
       <div className="w-full h-full flex justify-center items-center overflow-hidden">
-        <main className="w-full border border-primary rounded-xl shadow-xl shadow-primary">
+        <main className="w-full border border-primary-gold rounded-xl shadow-xl shadow-primary-gold">
           <MapSvg />
         </main>
       </div>
