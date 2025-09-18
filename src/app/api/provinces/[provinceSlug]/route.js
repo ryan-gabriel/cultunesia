@@ -2,7 +2,8 @@ import { createServerClient } from "@/lib/supabaseServer";
 import { replaceFile } from "@/utils/supabaseStorage";
 import { NextResponse } from "next/server";
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
+  const params = await context.params; 
   const { provinceSlug } = params;
 
   const supabase = createServerClient();

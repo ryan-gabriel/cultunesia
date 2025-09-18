@@ -33,7 +33,7 @@ export function DataTable({ columns, data, onEdit, onDelete }) {
       header: "Manage",
       cell: ({ row }) => (
         <Link href={`/dashboard/provinces/${row.original.slug}`} passHref>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
+          <Button variant="outline" size="sm" className="flex items-center gap-1 cursor-pointer">
             <Settings className="h-4 w-4" />
             Manage
           </Button>
