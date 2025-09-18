@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
-    console.log('testing middleware')
   const token = req.cookies.get("sb-access-token")?.value;
   const url = req.nextUrl.clone();
 
