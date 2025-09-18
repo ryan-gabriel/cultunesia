@@ -23,17 +23,17 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900 flex flex-col items-center py-16 px-6">
       {/* Logo / Title */}
       <div className="flex flex-col items-center mb-12">
-        <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center shadow-lg mb-4">
-          <span className="text-white font-bold text-xl">C</span>
-        </div>
+        <img
+          src="/Logo Short.svg"
+          alt="Cultunesia Logo"
+          className="w-30 h-30 mb-6"
+        />
         <h1 className="text-4xl font-bold text-gray-900">About Us</h1>
         <p className="text-gray-600 mt-2 max-w-xl text-center">
           Kami adalah tim pengembang di balik <span className="font-semibold text-yellow-600">Cultunesia</span>, 
           berfokus untuk menghadirkan pengalaman interaktif yang elegan dan informatif.
         </p>
       </div>
-
-      {/* Team Members */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 max-w-5xl w-full">
         {teamMembers.map((member, index) => (
           <div
