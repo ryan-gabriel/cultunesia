@@ -35,6 +35,12 @@ const resourceColumns = {
 // =================== Fields yang harus ditampilkan sebagai image ===================
 const imageFields = ["image_url"];
 
+// =================== Helper untuk truncate text ===================
+const truncateText = (text, maxLength = 80) => {
+  if (!text) return "";
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+};
+
 // =================== ResourceTable Component ===================
 export const ResourceTable = ({ slug, resource }) => {
   const [data, setData] = useState([]);
@@ -94,7 +100,7 @@ export const ResourceTable = ({ slug, resource }) => {
                     className="h-16 w-16 object-cover rounded-md"
                   />
                 ) : (
-                  item[col]
+                  truncateText(item[col], 80) // <-- batasi panjang text
                 )}
               </TableCell>
             ))}
@@ -104,7 +110,7 @@ export const ResourceTable = ({ slug, resource }) => {
                 item={item}
                 resource={resource}
                 triggerText={`Edit`}
-                onSuccess={handleSuccess} // <-- pakai handleSuccess
+                onSuccess={handleSuccess}
               />
               <DeleteResourceDialog
                 slug={slug}
