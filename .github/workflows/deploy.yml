@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # pastikan Linux
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -17,7 +17,7 @@ jobs:
 
       - run: npm ci
 
-      # 🔥 force rebuild sharp untuk linux-x64
-      - run: npm rebuild sharp --platform=linux --arch=x64
+      # install sharp sesuai platform linux
+      - run: npm install --platform=linux --arch=x64 sharp
 
       - run: npm run build
