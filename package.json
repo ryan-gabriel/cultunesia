@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "node -e \"if (process.platform==='linux') { require('child_process').execSync('npm rebuild sharp --platform=linux --arch=x64', {stdio: 'inherit'}) }\""
+    "lint": "eslint"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

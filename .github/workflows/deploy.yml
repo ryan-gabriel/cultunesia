@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # pastikan Linux
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      # 🔥 force rebuild sharp untuk linux-x64
+      - run: npm rebuild sharp --platform=linux --arch=x64
+
+      - run: npm run build
