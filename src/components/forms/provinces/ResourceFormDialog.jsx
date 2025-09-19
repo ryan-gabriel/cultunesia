@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Editor } from "@tinymce/tinymce-react";
 
 // Mapping fields per resource
 const resourceFields = {
@@ -31,7 +32,13 @@ const resourceFields = {
   traditional_clothing: ["name", "description", "image_url"],
 };
 
-export const ResourceFormDialog = ({ slug, resource, triggerText, item, onSuccess }) => {
+export const ResourceFormDialog = ({
+  slug,
+  resource,
+  triggerText,
+  item,
+  onSuccess,
+}) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({});
   const [imageFile, setImageFile] = useState(null);
@@ -77,7 +84,7 @@ export const ResourceFormDialog = ({ slug, resource, triggerText, item, onSucces
         method,
         body: form,
       });
-      
+
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal menyimpan data");
 
@@ -94,25 +101,82 @@ export const ResourceFormDialog = ({ slug, resource, triggerText, item, onSucces
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          {triggerText || (item ? "Edit" : `Tambah ${resource.replace("_", " ")}`)}
+          {triggerText ||
+            (item ? "Edit" : `Tambah ${resource.replace("_", " ")}`)}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[85%] max-h-screen overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {item ? "Edit" : "Tambah"} {resource.replace("_", " ")}
           </DialogTitle>
         </DialogHeader>
+
+        {/* bungkus form di container scrollable */}
         <div className="grid gap-4 py-4">
           {fields.map((field) => {
             if (field === "image_url") {
               return (
                 <div key={field}>
-                  <label className="block mb-1">{field.replace("_", " ")}</label>
+                  <label className="block mb-1">
+                    {field.replace("_", " ")}
+                  </label>
                   <input type="file" name="image_url" onChange={handleChange} />
                 </div>
               );
             }
+
+            if (field === "description") {
+              return (
+                <div key={field}>
+                  <label className="block mb-1">Description</label>
+                  <Editor
+                    apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
+                    value={formData.description || ""}
+                    init={{
+                      height: 400,
+                      menubar: true,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                      ],
+                      toolbar: [
+                        "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor",
+                        "| alignleft aligncenter alignright alignjustify",
+                        "| bullist numlist outdent indent | removeformat",
+                        "| link image media table | charmap insertdatetime",
+                        "| searchreplace code preview fullscreen | help",
+                      ].join(" "),
+                      content_style:
+                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    }}
+                    onEditorChange={(content) =>
+                      setFormData((prev) => ({ ...prev, description: content }))
+                    }
+                  />
+                </div>
+              );
+            }
+
             return (
               <Input
                 key={field}
@@ -124,6 +188,7 @@ export const ResourceFormDialog = ({ slug, resource, triggerText, item, onSucces
             );
           })}
         </div>
+
         <DialogFooter>
           <Button onClick={handleSubmit}>{item ? "Update" : "Tambah"}</Button>
         </DialogFooter>
