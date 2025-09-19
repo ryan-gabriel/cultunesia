@@ -1,6 +1,5 @@
 import { createServerClient } from "@/lib/supabaseServer";
-import sharp from "sharp";
-
+import { Jimp } from "jimp";
 /**
  * Upload file ke Supabase Storage bucket
  * @param {File|Blob} file - file dari FormData
@@ -8,18 +7,17 @@ import sharp from "sharp";
  * @param {string} bucket - nama bucket, default: "avatars"
  * @returns {string|null} publicUrl atau null jika gagal
  */
-export async function uploadFileToStorage(file, path, bucket="general") {
+export async function uploadFileToStorage(file, path, bucket = "general") {
   if (!file || file.size === 0) return null;
 
   const supabase = createServerClient();
-
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { data, error } = await supabase.storage
     .from(bucket)
     .upload(path, buffer, {
       contentType: file.type,
-      upsert: true, // otomatis timpa kalau path sama
+      upsert: true,
     });
 
   if (error) {
@@ -32,7 +30,6 @@ export async function uploadFileToStorage(file, path, bucket="general") {
 
   return publicUrl;
 }
-
 
 /**
  * Replace image file di Supabase Storage tanpa mengubah URL
@@ -47,38 +44,38 @@ export async function replaceFile(file, path, bucket = "general") {
 
   const supabase = createServerClient();
 
-  // convert file ke buffer
-  const arrayBuffer = await file.arrayBuffer();
-  let buffer = Buffer.from(arrayBuffer);
+  try {
+    // Baca file pakai Jimp
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  // jika file bukan PNG, convert pakai sharp
-  if (file.type !== "image/png") {
-    try {
-      buffer = await sharp(buffer).png().toBuffer();
-      // ubah ekstensi path menjadi .png
-      path = path.replace(/\.[^/.]+$/, ".png");
-    } catch (err) {
-      console.error("Error converting image to PNG:", err);
+    const image = await Jimp.read(buffer);
+
+    // Convert ke PNG
+    const pngBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
+
+    // Ubah ekstensi path jadi .png
+    path = path.replace(/\.[^/.]+$/, ".png");
+
+    // Upload ke Supabase dengan menimpa file lama
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, pngBuffer, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (error) {
+      console.error("Supabase replaceFile error:", error.message);
       return null;
     }
-  }
 
-  // upload dengan opsi upsert=true supaya menimpa file lama
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, buffer, {
-      contentType: "image/png",
-      upsert: true,
-    });
+    const publicUrl = supabase.storage.from(bucket).getPublicUrl(path).data
+      .publicUrl;
 
-  if (error) {
-    console.error("Supabase replaceFile error:", error.message);
+    return publicUrl;
+  } catch (err) {
+    console.error("Error converting image to PNG with Jimp:", err);
     return null;
   }
-
-  // dapatkan public URL
-  const publicUrl = supabase.storage.from(bucket).getPublicUrl(path).data
-    .publicUrl;
-
-  return publicUrl;
 }
