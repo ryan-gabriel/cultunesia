@@ -17,7 +17,7 @@ import {
 // Menu items
 const items = [
   { title: "Provinsi", url: "/dashboard/provinces", icon: MapPinned },
-  { title: "Posts", url: "/dashboard/posts", icon: Newspaper },
+  { title: "Blogs", url: "/dashboard/blogs", icon: Newspaper },
   { title: "Quiz", url: "/dashboard/quizzes", icon: Brain },
 ];
 
