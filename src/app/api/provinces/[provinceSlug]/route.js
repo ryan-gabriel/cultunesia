@@ -24,9 +24,9 @@ export async function GET(req, context) {
   return NextResponse.json({ province });
 }
 
-export async function PUT(req, { params }) {
+export async function PUT(req, context) {
   try {
-    const { provinceSlug: slug } = params;
+    const { provinceSlug: slug } = await context.params;
     console.log(slug);
     if (!slug)
       return NextResponse.json({ error: "Slug wajib diisi" }, { status: 400 });
