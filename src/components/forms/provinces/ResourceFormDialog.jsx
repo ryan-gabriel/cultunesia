@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Editor } from "@tinymce/tinymce-react";
+import { Upload, X, FileImage, Loader2 } from "lucide-react";
 
 // Mapping fields per resource
 const resourceFields = {
@@ -23,13 +24,53 @@ const resourceFields = {
     "name",
     "description",
     "image_url",
-    "latitude",
     "longitude",
     "maps_url",
     "street_view_url",
     "panorama_id",
   ],
   traditional_clothing: ["name", "description", "image_url"],
+};
+
+// Helper function to convert image to PNG
+const convertToPNG = (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          const pngFile = new File(
+            [blob],
+            file.name.replace(/\.[^/.]+$/, ".png"),
+            { type: "image/png" }
+          );
+          resolve(pngFile);
+        },
+        "image/png",
+        0.9
+      );
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Field label mapping
+const fieldLabels = {
+  name: "Name",
+  description: "Description",
+  image_url: "Image",
+  fact: "Fun Fact",
+  longitude: "Longitude",
+  maps_url: "Maps URL",
+  street_view_url: "Street View URL",
+  panorama_id: "Panorama ID",
 };
 
 export const ResourceFormDialog = ({
@@ -42,34 +83,93 @@ export const ResourceFormDialog = ({
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({});
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   const fields = resourceFields[resource] || [];
+  const resourceName = resource
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 
   useEffect(() => {
     if (item) {
-      setFormData(item); // isi form jika edit
+      setFormData(item);
+      if (item.image_url) {
+        setImagePreview(item.image_url);
+      }
+    } else {
+      setFormData({});
+      setImagePreview(null);
+      setImageFile(null);
     }
-  }, [item]);
+  }, [item, open]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "image_url" && files && files[0]) {
-      setImageFile(files[0]);
+    if (name === "image" && files && files[0]) {
+      handleImageUpload(files[0]);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
+  const handleImageUpload = async (file) => {
+    try {
+      setLoading(true);
+      const pngFile = await convertToPNG(file);
+      setImageFile(pngFile);
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(pngFile);
+    } catch (error) {
+      console.error("Error converting image:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImageUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData((prev) => ({ ...prev, image_url: null }));
+  };
+
   const handleSubmit = async () => {
     try {
+      setLoading(true);
       const form = new FormData();
 
-      // tambahkan semua field selain image
       Object.keys(formData).forEach((key) => {
-        if (key !== "image_url") form.append(key, formData[key] || "");
+        if (
+          key !== "image_url" &&
+          formData[key] !== null &&
+          formData[key] !== undefined
+        ) {
+          form.append(key, formData[key] || "");
+        }
       });
 
-      // tambahkan file jika ada
       if (imageFile) {
         form.append("image", imageFile);
       }
@@ -86,111 +186,224 @@ export const ResourceFormDialog = ({
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Gagal menyimpan data");
+      if (!res.ok) throw new Error(json.error || "Failed to save data");
 
       setOpen(false);
       setFormData({});
       setImageFile(null);
+      setImagePreview(null);
       if (onSuccess) onSuccess(json[resource]);
     } catch (err) {
       console.error(err);
+      alert(err.message || "An error occurred while saving");
+    } finally {
+      setLoading(false);
     }
   };
+
+  const renderImageField = () => (
+    <div className="space-y-3">
+      <label className="block text-sm font-semibold text-gray-700">
+        Image{" "}
+        <span className="text-xs text-gray-500">
+          (automatically converted to PNG)
+        </span>
+      </label>
+      <div
+        className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-200 ${
+          dragActive
+            ? "border-primary-gold bg-primary-gold/10"
+            : imagePreview
+            ? "border-primary-gold bg-primary-gold/5"
+            : "border-gray-300 hover:border-primary-gold bg-gray-50"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-gold mb-2" />
+            <p className="text-sm text-gray-600">Converting to PNG...</p>
+          </div>
+        ) : imagePreview ? (
+          <div className="relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-full max-h-64 object-contain rounded-lg shadow-sm"
+            />
+            <button
+              type="button"
+              onClick={removeImage}
+              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur">
+              PNG Format
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="p-4 bg-primary-gold/20 rounded-full mb-4">
+              <Upload className="w-8 h-8 text-primary-gold" />
+            </div>
+            <p className="text-lg font-medium text-gray-700 mb-2">
+              Drop your image here
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              or click to browse files
+            </p>
+            <p className="text-xs text-gray-400">
+              Supports: JPG, JPEG, PNG, WebP (auto-converted to PNG)
+            </p>
+          </div>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          name="image"
+          onChange={handleChange}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
+    </div>
+  );
+
+  const renderTextField = (field) => (
+    <div key={field} className="space-y-2">
+      <label className="block text-sm font-semibold text-gray-700">
+        {fieldLabels[field] ||
+          field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+        {field === "name" && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <Input
+        name={field}
+        value={formData[field] || ""}
+        onChange={handleChange}
+        placeholder={`Enter ${fieldLabels[field] || field.replace(/_/g, " ")}`}
+        className="border-gray-300 focus:border-primary-gold focus:ring-primary-gold rounded-lg"
+        required={field === "name"}
+      />
+    </div>
+  );
+
+  const renderDescriptionField = () => (
+    <div className="space-y-2">
+      <label className="block text-sm font-semibold text-gray-700">
+        Description
+      </label>
+      <div className="border border-gray-300 rounded-lg overflow-hidden">
+        <Editor
+          apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
+          value={formData.description || ""}
+          init={{
+            height: 350,
+            menubar: false,
+            plugins: [
+              "advlist",
+              "autolink",
+              "lists",
+              "link",
+              "image",
+              "charmap",
+              "preview",
+              "anchor",
+              "searchreplace",
+              "visualblocks",
+              "code",
+              "fullscreen",
+              "insertdatetime",
+              "media",
+              "table",
+              "help",
+              "wordcount",
+            ],
+            toolbar: [
+              "undo redo | blocks | bold italic underline strikethrough",
+              "alignleft aligncenter alignright alignjustify",
+              "bullist numlist outdent indent | removeformat",
+              "link image media table | charmap | code preview fullscreen help",
+            ].join(" | "),
+            content_style: `
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #374151;
+                margin: 1rem;
+              }
+            `,
+            branding: false,
+          }}
+          onEditorChange={(content) =>
+            setFormData((prev) => ({ ...prev, description: content }))
+          }
+        />
+      </div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          {triggerText ||
-            (item ? "Edit" : `Tambah ${resource.replace("_", " ")}`)}
+        <Button className="bg-primary-gold hover:bg-primary-gold/90 text-white font-medium px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+          {triggerText || (item ? "Edit" : `Add ${resourceName}`)}
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="sm:max-w-[85%] max-h-screen overflow-y-auto"
+        className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle>
-            {item ? "Edit" : "Tambah"} {resource.replace("_", " ")}
+        <DialogHeader className="bg-primary-gold rounded-2xl text-white p-6 -m-6 mb-6">
+          <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <FileImage className="w-6 h-6" />
+            </div>
+            {item ? "Edit" : "Add New"} {resourceName}
           </DialogTitle>
         </DialogHeader>
-
-        {/* bungkus form di container scrollable */}
-        <div className="grid gap-4 py-4">
-          {fields.map((field) => {
-            if (field === "image_url") {
-              return (
-                <div key={field}>
-                  <label className="block mb-1">
-                    {field.replace("_", " ")}
-                  </label>
-                  <input type="file" name="image_url" onChange={handleChange} />
-                </div>
-              );
-            }
-
-            if (field === "description") {
-              return (
-                <div key={field}>
-                  <label className="block mb-1">Description</label>
-                  <Editor
-                    apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
-                    value={formData.description || ""}
-                    init={{
-                      height: 400,
-                      menubar: true,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                      ],
-                      toolbar: [
-                        "undo redo | blocks | bold italic underline strikethrough | forecolor backcolor",
-                        "| alignleft aligncenter alignright alignjustify",
-                        "| bullist numlist outdent indent | removeformat",
-                        "| link image media table | charmap insertdatetime",
-                        "| searchreplace code preview fullscreen | help",
-                      ].join(" "),
-                      content_style:
-                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                    }}
-                    onEditorChange={(content) =>
-                      setFormData((prev) => ({ ...prev, description: content }))
-                    }
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <Input
-                key={field}
-                name={field}
-                value={formData[field] || ""}
-                onChange={handleChange}
-                placeholder={field.replace("_", " ")}
-              />
-            );
-          })}
+        <div className="overflow-y-auto max-h-[60vh] px-1">
+          <div className="space-y-6">
+            {fields.map((field) => {
+              if (field === "image_url") {
+                return <div key={field}>{renderImageField()}</div>;
+              }
+              if (field === "description") {
+                return <div key={field}>{renderDescriptionField()}</div>;
+              }
+              return renderTextField(field);
+            })}
+          </div>
         </div>
-
-        <DialogFooter>
-          <Button onClick={handleSubmit}>{item ? "Update" : "Tambah"}</Button>
+        <DialogFooter className="bg-gray-50 px-6 py-4 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            className="px-6 py-2 border-gray-300 hover:bg-gray-100"
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !formData.name?.trim()}
+            className="bg-primary-gold hover:bg-primary-gold/90 text-white px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {item ? "Updating..." : "Adding..."}
+              </div>
+            ) : item ? (
+              "Update"
+            ) : (
+              "Add"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

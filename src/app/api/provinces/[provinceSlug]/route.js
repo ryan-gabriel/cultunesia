@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabaseServer";
-import { replaceFile } from "@/utils/supabaseStorage";
+import { uploadFileToStorage } from "@/utils/supabaseStorage";
 import { NextResponse } from "next/server";
 
 export async function GET(req, context) {
@@ -63,13 +63,11 @@ export async function PUT(req, { params }) {
 
     // replace image jika ada
     if (image && image.size > 0) {
-      // gunakan replaceFile supaya URL tetap sama
       const path = oldProvince.image_url
-        ?.split("/storage/v1/object/public/")[1] // ambil path di bucket dari publicUrl
-        ?.split("?")[0]; // hapus query string kalau ada
-
+        ?.split("/storage/v1/object/public/general/")[1] // ambil path di bucket dari publicUrl
+        ?.split("?")[0];
       if (path) {
-        imageUrl = await replaceFile(image, path, "general");
+        imageUrl = await uploadFileToStorage(image, path, "general", "replace");
       }
     }
 
@@ -126,7 +124,7 @@ export async function DELETE(req, { params }) {
     // hapus image di storage kalau ada
     if (province.image_url) {
       const path = province.image_url
-        .split("/storage/v1/object/public/")[1]
+        .split("/storage/v1/object/public/general/")[1]
         ?.split("?")[0];
       if (path) {
         try {
