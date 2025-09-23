@@ -1,4 +1,7 @@
-"use client";
+"use client"; // tetap butuh kalau komponen pakai state/hook React
+
+export const dynamic = "force-dynamic"; // ⬅️ cegah build-time SSG
+
 
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
