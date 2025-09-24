@@ -1,5 +1,7 @@
 "use client";
 
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 // --- Icon Components (Tidak ada perubahan) ---
@@ -78,6 +80,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -86,6 +89,33 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+        setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error);
+      } else {
+        await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+        router.replace("/dashboard/provinces");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
     // Logika submit tetap sama
   };
 
