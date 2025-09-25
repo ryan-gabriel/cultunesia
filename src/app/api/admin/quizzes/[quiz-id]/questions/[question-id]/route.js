@@ -93,7 +93,7 @@ export async function PUT(req, context) {
           .insert([{ question_id: questionId, ...p }]);
       }
     } else if (
-      (type === "short_answer" || type === "image_guess") &&
+      (type === "short_answer") &&
       typeSpecificData.answer_keys
     ) {
       const keys = JSON.parse(typeSpecificData.answer_keys);
@@ -156,7 +156,7 @@ export async function GET(req, context) {
         .select("*")
         .eq("question_id", questionId);
       typeSpecificData.matching_pairs = matching_pairs || [];
-    } else if (type === "short_answer" || type === "image_guess") {
+    } else if (type === "short_answer") {
       const { data: answer_keys } = await supabase
         .from("answer_keys")
         .select("*")
@@ -215,7 +215,7 @@ export async function DELETE(req, context) {
       await supabase.from("options").delete().eq("question_id", questionId);
     } else if (type === "matching") {
       await supabase.from("matching_pairs").delete().eq("question_id", questionId);
-    } else if (type === "short_answer" || type === "image_guess") {
+    } else if (type === "short_answer") {
       await supabase.from("answer_keys").delete().eq("question_id", questionId);
     }
 

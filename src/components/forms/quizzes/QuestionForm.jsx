@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 // Helper function to convert a File or Blob to PNG
 const convertImageToPng = (file) => {
@@ -67,7 +68,6 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
     { value: "multiple_choice", label: "Multiple Choice" },
     { value: "short_answer", label: "Short Answer" },
     { value: "matching", label: "Matching Pairs" },
-    { value: "image_guess", label: "Image Guess" },
   ];
 
   useEffect(() => {
@@ -90,8 +90,7 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
             ? initialData.matching_pairs
             : [{ left_text: "", right_text: "" }],
         answer_keys:
-          initialData.type === "short_answer" ||
-          initialData.type === "image_guess"
+          initialData.type === "short_answer"
             ? initialData.answer_keys.map((k) => k.correct_text)
             : [""],
       });
@@ -210,7 +209,9 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.type || !formData.text) {
-      alert("Type dan Text wajib diisi");
+      toast("Type dan Text wajib diisi", {
+        duration: 3000,
+      });
       return;
     }
 
@@ -232,7 +233,6 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
         );
         break;
       case "short_answer":
-      case "image_guess":
         multipartData.append(
           "answer_keys",
           JSON.stringify(formData.answer_keys)
@@ -242,9 +242,9 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
 
     try {
       const response = await fetch(
-        `/api/admin/quizzes/${quizId}/questions/${
-          initialData && initialData.question_id
-        }`,
+        initialData && initialData.question_id
+          ? `/api/admin/quizzes/${quizId}/questions/${initialData.question_id}`
+          : `/api/admin/quizzes/${quizId}/questions`,
         {
           method: initialData ? "PUT" : "POST",
           body: multipartData,
@@ -261,7 +261,9 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
       onSubmit?.(result); // Pass the result back to the parent component
     } catch (error) {
       console.error("Failed to create question:", error.message);
-      alert("Failed to create question: " + error.message);
+      toast("Failed to create question", {
+        duration: 3000,
+      });
     }
   };
 
@@ -319,7 +321,6 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
           </div>
         );
       case "short_answer":
-      case "image_guess":
         return (
           <div className="space-y-2">
             <Label className="font-semibold">Answer Keys</Label>
@@ -442,8 +443,7 @@ export default function QuestionForm({ onSubmit, initialData = null, quizId }) {
       </div>
 
       {/* Image */}
-      {(formData.type === "image_guess" ||
-        formData.type === "multiple_choice") && (
+      {formData.type === "multiple_choice" && (
         <div>
           <Label className="block mb-1 font-semibold">Image (optional)</Label>
           <Input type="file" accept="image/*" onChange={handleFileChange} />

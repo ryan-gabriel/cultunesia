@@ -35,20 +35,17 @@ const convertImageToPng = (file) => {
         canvas.height = img.height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(
-                new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", {
-                  type: "image/png",
-                })
-              );
-            } else {
-              reject(new Error("Failed to convert image to PNG."));
-            }
-          },
-          "image/png"
-        );
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(
+              new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", {
+                type: "image/png",
+              })
+            );
+          } else {
+            reject(new Error("Failed to convert image to PNG."));
+          }
+        }, "image/png");
       };
       img.onerror = (error) => reject(error);
       img.src = event.target.result;
@@ -59,10 +56,10 @@ const convertImageToPng = (file) => {
 };
 
 // Practice Quiz Form Component
-export default function PracticeQuizForm() {
+export default function PracticeQuizForm({ province_slug }) {
   const [formData, setFormData] = useState({
     title: "",
-    province_id: "",
+    province_slug: province_slug,
     questions: [
       {
         type: "multiple_choice",
@@ -92,7 +89,6 @@ export default function PracticeQuizForm() {
     { value: "multiple_choice", label: "Multiple Choice" },
     { value: "short_answer", label: "Short Answer" },
     { value: "matching", label: "Matching Pairs" },
-    { value: "image_guess", label: "Image Guess" },
   ];
 
   const handleInputChange = (field, value) => {
@@ -115,11 +111,14 @@ export default function PracticeQuizForm() {
       type: newType,
       options:
         newType === "multiple_choice"
-          ? [{ text: "", is_correct: false }, { text: "", is_correct: false }]
+          ? [
+              { text: "", is_correct: false },
+              { text: "", is_correct: false },
+            ]
           : [],
       matching_pairs:
         newType === "matching" ? [{ left_text: "", right_text: "" }] : [],
-      answer_keys: newType === "short_answer" || newType === "image_guess" ? [""] : [],
+      answer_keys: newType === "short_answer" ? [""] : [],
     };
     setFormData((prev) => ({ ...prev, questions: updatedQuestions }));
   };
@@ -236,13 +235,13 @@ export default function PracticeQuizForm() {
     setFormData((prev) => ({ ...prev, questions: updatedQuestions }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Create FormData object
     const finalFormData = new FormData();
     finalFormData.append("title", formData.title);
-    finalFormData.append("province_id", formData.province_id);
+    finalFormData.append("province_slug", formData.province_slug);
 
     // Append questions data to FormData
     formData.questions.forEach((question, index) => {
@@ -264,7 +263,7 @@ export default function PracticeQuizForm() {
           `questions[${index}][matching_pairs]`,
           JSON.stringify(question.matching_pairs)
         );
-      } else if (question.type === "short_answer" || question.type === "image_guess") {
+      } else if (question.type === "short_answer") {
         finalFormData.append(
           `questions[${index}][answer_keys]`,
           JSON.stringify(question.answer_keys)
@@ -272,10 +271,15 @@ export default function PracticeQuizForm() {
       }
     });
 
-    // Log FormData entries for verification
-    for (const pair of finalFormData.entries()) {
-      console.log(`${pair[0]}:`, pair[1]);
-    }
+    const method = "POST";
+    finalFormData.append("category", "province");
+    finalFormData.append("province_slug", province_slug);
+    const res = await fetch(`/api/admin/quizzes`, {
+      method,
+      body: finalFormData,
+    });
+    const json = await res.json();
+    console.log(json);
   };
 
   const renderQuestionFields = (question, questionIndex) => {
@@ -346,7 +350,6 @@ export default function PracticeQuizForm() {
         );
 
       case "short_answer":
-      case "image_guess":
         return (
           <div>
             <Label className="block text-sm font-medium text-gray-700">
@@ -358,7 +361,11 @@ export default function PracticeQuizForm() {
                   type="text"
                   value={key}
                   onChange={(e) =>
-                    handleAnswerKeyChange(questionIndex, keyIndex, e.target.value)
+                    handleAnswerKeyChange(
+                      questionIndex,
+                      keyIndex,
+                      e.target.value
+                    )
                   }
                   placeholder={`Answer ${keyIndex + 1}`}
                 />
@@ -454,7 +461,9 @@ export default function PracticeQuizForm() {
     <div className="max-w-4xl mx-auto p-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Create Practice Quiz</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Create Practice Quiz
+          </CardTitle>
           <CardDescription>
             Fill out the form to create a new practice quiz.
           </CardDescription>
@@ -472,25 +481,6 @@ export default function PracticeQuizForm() {
                   placeholder="Enter quiz title"
                   required
                 />
-              </div>
-              <div>
-                <Label htmlFor="province_id">Province</Label>
-                <Select
-                  value={formData.province_id}
-                  onValueChange={(value) => handleInputChange("province_id", value)}
-                  required
-                >
-                  <SelectTrigger id="province_id">
-                    <SelectValue placeholder="Select a province" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provinces.map((province) => (
-                      <SelectItem key={province.id} value={province.id}>
-                        {province.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
@@ -571,14 +561,18 @@ export default function PracticeQuizForm() {
                     id={`q-text-${questionIndex}`}
                     value={question.text}
                     onChange={(e) =>
-                      handleQuestionChange(questionIndex, "text", e.target.value)
+                      handleQuestionChange(
+                        questionIndex,
+                        "text",
+                        e.target.value
+                      )
                     }
                     placeholder="Enter your question"
                     required
                   />
                 </div>
 
-                {(question.type === "image_guess" || question.type === "multiple_choice") && (
+                {question.type === "multiple_choice" && (
                   <div className="mb-4">
                     <Label htmlFor={`image-upload-${questionIndex}`}>
                       Image Upload (Optional)

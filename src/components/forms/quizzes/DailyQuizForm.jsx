@@ -81,7 +81,6 @@ const DailyQuizForm = () => {
     { value: "multiple_choice", label: "Multiple Choice" },
     { value: "short_answer", label: "Short Answer" },
     { value: "matching", label: "Matching Pairs" },
-    { value: "image_guess", label: "Image Guess" },
   ];
 
   const handleInputChange = (field, value) => {
@@ -111,8 +110,7 @@ const DailyQuizForm = () => {
           : [],
       matching_pairs:
         newType === "matching" ? [{ left_text: "", right_text: "" }] : [],
-      answer_keys:
-        newType === "short_answer" || newType === "image_guess" ? [""] : [],
+      answer_keys: newType === "short_answer" ? [""] : [],
     };
     setFormData((prev) => ({ ...prev, questions: updatedQuestions }));
   };
@@ -257,10 +255,7 @@ const DailyQuizForm = () => {
           `questions[${index}][matching_pairs]`,
           JSON.stringify(question.matching_pairs)
         );
-      } else if (
-        question.type === "short_answer" ||
-        question.type === "image_guess"
-      ) {
+      } else if (question.type === "short_answer") {
         finalFormData.append(
           `questions[${index}][answer_keys]`,
           JSON.stringify(question.answer_keys)
@@ -356,7 +351,6 @@ const DailyQuizForm = () => {
         );
 
       case "short_answer":
-      case "image_guess":
         return (
           <div>
             <Label className="block text-sm font-medium text-gray-700">
@@ -591,8 +585,7 @@ const DailyQuizForm = () => {
                   />
                 </div>
 
-                {(question.type === "image_guess" ||
-                  question.type === "multiple_choice") && (
+                {question.type === "multiple_choice" && (
                   <div className="mb-4">
                     <Label htmlFor={`image-upload-${questionIndex}`}>
                       Image Upload (Optional)

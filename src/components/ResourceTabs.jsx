@@ -12,6 +12,7 @@ const resources = [
   "languages",
   "tourism",
   "traditional_clothing",
+  "quizzes",
 ];
 
 export const ResourceTabs = ({ slug }) => {

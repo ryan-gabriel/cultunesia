@@ -9,7 +9,7 @@ export async function POST(request) {
 
     const title = formData.get("title");
     const category = formData.get("category") || "daily";
-    const province_id = formData.get("province_id") || null;
+    const province_slug = formData.get("province_slug") || null;
     const scheduled_date = formData.get("scheduled_date") || null;
 
     if (!title) {
@@ -23,7 +23,7 @@ export async function POST(request) {
     const { data: quiz, error: quizError } = await supabase
       .from("quizzes")
       .insert([
-        { quiz_id: uuidv4(), title, category, province_id, scheduled_date },
+        { quiz_id: uuidv4(), title, category, province_slug, scheduled_date },
       ])
       .select()
       .single();
@@ -92,7 +92,7 @@ export async function POST(request) {
       }
 
       if (
-        (q.type === "short_answer" || q.type === "image_guess") &&
+        (q.type === "short_answer") &&
         Array.isArray(q.answer_keys)
       ) {
         const keysData = q.answer_keys.map((ans) => ({
@@ -113,17 +113,32 @@ export async function POST(request) {
   }
 }
 
-export async function GET() {
+export async function GET(req) {
   const supabase = createServerClient();
 
-  const { data: quizzes, error } = await supabase
-    .from("quizzes")
-    .select("*")
-    .eq("category", "daily");
+  // ambil query parameter dari URL
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type") ?? "daily";
+  const provinceSlug = searchParams.get("province_slug");
+
+  let query = supabase.from("quizzes").select("*");
+  if (type === "province") {
+    if (!provinceSlug) {
+      return NextResponse.json(
+        { error: "province_slug wajib diisi jika type=province" },
+        { status: 400 }
+      );
+    }
+    query = query.eq("category", "province").eq("province_slug", provinceSlug);
+  } else {
+    query = query.eq("category", "daily");
+  }
+
+  const { data: quizzes, error } = await query;
 
   if (error) {
     return NextResponse.json(
-      { error: "Gagal mengambil daftar provinsi" },
+      { error: "Gagal mengambil daftar quiz", details: error.message },
       { status: 500 }
     );
   }

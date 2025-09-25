@@ -3,7 +3,7 @@ import { uploadFileToStorage } from "@/utils/supabaseStorage";
 import { NextResponse } from "next/server";
 
 export async function GET(req, context) {
-  const params = await context.params; 
+  const params = await context.params;
   const { provinceSlug } = params;
 
   const supabase = createServerClient();
@@ -22,6 +22,63 @@ export async function GET(req, context) {
   }
 
   return NextResponse.json({ province });
+}
+
+export async function POST(req, context) {
+  const { provinceSlug, resourceSlug } = await context.params;
+
+  if (!allowedResources.includes(resourceSlug)) {
+    return NextResponse.json(
+      { error: "Resource tidak ditemukan" },
+      { status: 404 }
+    );
+  }
+
+  const formData = await req.formData();
+  const supabase = createServerClient();
+
+  const { data: province, error: provinceError } = await supabase
+    .from("provinces")
+    .select("id")
+    .eq("slug", provinceSlug)
+    .single();
+
+  if (provinceError || !province) {
+    return NextResponse.json(
+      { error: "Provinsi tidak ditemukan" },
+      { status: 404 }
+    );
+  }
+
+  const image = formData.get("image");
+  const body = {};
+  formData.forEach((value, key) => {
+    if (key !== "image") body[key] = value;
+  });
+
+  let imageUrl = null;
+  if (image && image.size > 0) {
+    const timestamp = Date.now();
+    const ext = image.name.split(".").pop();
+    const path = `provinces/${provinceSlug}-${timestamp}.${ext}`;
+    imageUrl = await uploadFileToStorage(image, path);
+    console.log(imageUrl);
+  }
+
+  const { data, error } = await supabase
+    .from(resourceSlug)
+    .insert([{ ...body, province_id: province.id, image_url: imageUrl }])
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: `Gagal menambahkan ${resourceSlug}` },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ [resourceSlug]: data });
 }
 
 export async function PUT(req, context) {

@@ -8,7 +8,7 @@ import { Plus, AlertCircle, Loader2, Search, FileText } from "lucide-react"; // 
 import Link from "next/link";
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // Untuk animasi
-
+import { toast } from "sonner";
 
 // --- Komponen untuk UI State ---
 const LoadingState = () => (
@@ -31,7 +31,9 @@ const ErrorState = ({ message }) => (
   >
     <AlertCircle className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Terjadi Kesalahan</p>
-    <p className="text-md mt-2">{message || "Gagal memuat data. Silakan coba lagi."}</p>
+    <p className="text-md mt-2">
+      {message || "Gagal memuat data. Silakan coba lagi."}
+    </p>
   </motion.div>
 );
 
@@ -52,7 +54,6 @@ const EmptyState = () => (
     </Link>
   </motion.div>
 );
-
 
 // --- Komponen Utama Halaman ---
 const Page = () => {
@@ -93,24 +94,32 @@ const Page = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Gagal menghapus blog");
 
-      alert("Blog berhasil dihapus");
+      toast("Blog Berhasil Dihapus", {
+        description: "Perubahan berhasil disimpan",
+        duration: 3000,
+      });
       setData((prev) => prev.filter((b) => b.id !== blog.id));
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      toast("Error occurred!", {
+        description: err.message,
+        duration: 3000,
+      });
     }
   };
 
   // 🔹 Filter data berdasarkan searchTerm
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
-    return data.filter(blog =>
-      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      blog.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    return data.filter(
+      (blog) =>
+        blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.profiles?.full_name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase())
     );
   }, [data, searchTerm]);
-
 
   if (authLoading) return <LoadingState />;
   if (!session) return null; // Atau redirect ke halaman login
@@ -118,11 +127,10 @@ const Page = () => {
   return (
     <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        
         {/* Header Halaman */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200"
         >
@@ -143,38 +151,47 @@ const Page = () => {
         </motion.div>
 
         {/* 🔹 Statistik Ringkas */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Total Artikel</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">{data.length}</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mt-1">
+                {data.length}
+              </h2>
             </div>
             <FileText className="w-10 h-10 text-yellow-500 opacity-60" />
           </div>
           {/* Anda bisa menambahkan kartu statistik lain di sini, contoh: */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 font-medium">Artikel Diterbitkan</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">{data.length}</h2> {/* Placeholder */}
+              <p className="text-sm text-gray-500 font-medium">
+                Artikel Diterbitkan
+              </p>
+              <h2 className="text-3xl font-bold text-gray-900 mt-1">
+                {data.length}
+              </h2>{" "}
+              {/* Placeholder */}
             </div>
             <FileText className="w-10 h-10 text-green-500 opacity-60" />
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Artikel Draft</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">0</h2> {/* Placeholder */}
+              <h2 className="text-3xl font-bold text-gray-900 mt-1">0</h2>{" "}
+              {/* Placeholder */}
             </div>
             <FileText className="w-10 h-10 text-blue-500 opacity-60" />
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Penulis Aktif</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">1</h2> {/* Placeholder */}
+              <h2 className="text-3xl font-bold text-gray-900 mt-1">1</h2>{" "}
+              {/* Placeholder */}
             </div>
             <FileText className="w-10 h-10 text-purple-500 opacity-60" />
           </div>
@@ -207,7 +224,6 @@ const Page = () => {
           </select> */}
         </motion.div>
 
-
         {/* Panel untuk Tabel Data */}
         <AnimatePresence mode="wait">
           {loadingData ? (
@@ -225,11 +241,14 @@ const Page = () => {
               transition={{ duration: 0.5 }}
               className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
             >
-              <DataTable columns={columns} data={filteredData} onDelete={handleDelete} />
+              <DataTable
+                columns={columns}
+                data={filteredData}
+                onDelete={handleDelete}
+              />
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </div>
   );

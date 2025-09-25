@@ -24,6 +24,7 @@ import {
 import { MoreHorizontal, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import EditDailyQuizForm from "@/components/forms/quizzes/EditDailyQuizForm";
 
 export function DataTable({ columns, data, onEdit, onDelete }) {
   const enhancedColumns = [
@@ -56,11 +57,9 @@ export function DataTable({ columns, data, onEdit, onDelete }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-28">
-            <Link href={`/dashboard/quizzes/edit/${row.original.id}`}>
-              <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
-                Edit
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
+              <EditDailyQuizForm quiz={row.original} />
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onDelete?.(row.original)}>
               Delete
             </DropdownMenuItem>

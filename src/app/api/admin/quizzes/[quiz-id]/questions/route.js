@@ -101,7 +101,7 @@ export async function POST(req) {
       for (const p of pairs) {
         await supabase.from("matching_pairs").insert([{ question_id, ...p }]);
       }
-    } else if (type === "short_answer" || type === "image_guess") {
+    } else if (type === "short_answer") {
       const keys = JSON.parse(formData.get("answer_keys") || "[]");
       for (const k of keys) {
         await supabase.from("answer_keys").insert([{ question_id, ...k }]);

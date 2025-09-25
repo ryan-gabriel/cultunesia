@@ -9,6 +9,7 @@ const allowedResources = [
   "languages",
   "tourism",
   "traditional_clothing",
+  "quizzes"
 ];
 
 // =================== GET ===================

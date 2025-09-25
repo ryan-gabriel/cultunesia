@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/context/AuthContext";
-
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({ children }) {
   return (
@@ -12,6 +12,7 @@ export default function RootLayout({ children }) {
           <SidebarTrigger className={"absolute top-1 left-1"} />
           {children}
         </main>
+        <Toaster />
       </SidebarProvider>
     </AuthProvider>
   );

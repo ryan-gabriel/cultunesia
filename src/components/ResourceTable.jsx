@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,6 +11,9 @@ import {
 } from "@/components/ui/table";
 import { ResourceFormDialog } from "./forms/provinces/ResourceFormDialog";
 import { DeleteResourceDialog } from "./forms/provinces/DeleteResourceDialog";
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { Settings } from "lucide-react";
 
 // =================== Mapping Columns per Resource ===================
 const resourceColumns = {
@@ -30,6 +32,7 @@ const resourceColumns = {
     "panorama_id",
   ],
   traditional_clothing: ["name", "description", "image_url"],
+  quizzes: ["title"],
 };
 
 // =================== Fields yang harus ditampilkan sebagai image ===================
@@ -53,7 +56,14 @@ export const ResourceTable = ({ slug, resource }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/provinces/${slug}/${resource}`);
+      let res;
+      if (resource == "quizzes") {
+        res = await fetch(
+          `/api/admin/quizzes?type=province&province_slug=${slug}`
+        );
+      } else {
+        res = await fetch(`/api/provinces/${slug}/${resource}`);
+      }
       if (!res.ok) throw new Error(`Gagal memuat ${resource}`);
       const json = await res.json();
       setData(json[resource] || []);
@@ -88,9 +98,9 @@ export const ResourceTable = ({ slug, resource }) => {
           <TableHead>Aksi</TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <TableBody key={"table_body"}>
         {data.map((item) => (
-          <TableRow key={item.id}>
+          <TableRow key={item.id ?? item.quiz_id}>
             {columns.map((col) => (
               <TableCell key={col}>
                 {imageFields.includes(col) && item[col] ? (
@@ -104,6 +114,23 @@ export const ResourceTable = ({ slug, resource }) => {
                 )}
               </TableCell>
             ))}
+            {resource == "quizzes" && (
+              <TableCell className="space-x-2">
+                <Link
+                  href={`/dashboard/provinces/${slug}/quizzes/${item.quiz_id}`}
+                  passHref
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 cursor-pointer"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Manage
+                  </Button>
+                </Link>
+              </TableCell>
+            )}
             <TableCell className="space-x-2">
               <ResourceFormDialog
                 slug={slug}

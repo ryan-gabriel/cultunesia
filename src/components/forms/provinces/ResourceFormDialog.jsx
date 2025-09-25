@@ -13,6 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Editor } from "@tinymce/tinymce-react";
 import { Upload, X, FileImage, Loader2 } from "lucide-react";
+import PracticeQuizForm from "../quizzes/PracticeQuizForm";
+import { toast } from "sonner";
 
 // Mapping fields per resource
 const resourceFields = {
@@ -30,6 +32,7 @@ const resourceFields = {
     "panorama_id",
   ],
   traditional_clothing: ["name", "description", "image_url"],
+  quizzes: ["title"],
 };
 
 // Helper function to convert image to PNG
@@ -71,6 +74,7 @@ const fieldLabels = {
   maps_url: "Maps URL",
   street_view_url: "Street View URL",
   panorama_id: "Panorama ID",
+  title: "Title",
 };
 
 export const ResourceFormDialog = ({
@@ -180,10 +184,20 @@ export const ResourceFormDialog = ({
 
       const method = item ? "PUT" : "POST";
 
-      const res = await fetch(`/api/provinces/${slug}/${resource}`, {
-        method,
-        body: form,
-      });
+      let res;
+      if (resource == "quizzes") {
+        form.append("category", "province");
+        form.append("province_slug", slug);
+        res = await fetch(`/api/admin/quizzes/${item.quiz_id}`, {
+          method,
+          body: form,
+        });
+      } else {
+        res = await fetch(`/api/provinces/${slug}/${resource}`, {
+          method,
+          body: form,
+        });
+      }
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to save data");
@@ -195,7 +209,9 @@ export const ResourceFormDialog = ({
       if (onSuccess) onSuccess(json[resource]);
     } catch (err) {
       console.error(err);
-      alert(err.message || "An error occurred while saving");
+      toast("Terjadi kesalahan!", {
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -353,59 +369,81 @@ export const ResourceFormDialog = ({
           {triggerText || (item ? "Edit" : `Add ${resourceName}`)}
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <DialogHeader className="bg-primary-gold rounded-2xl text-white p-6 -m-6 mb-6">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <FileImage className="w-6 h-6" />
-            </div>
-            {item ? "Edit" : "Add New"} {resourceName}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="overflow-y-auto max-h-[60vh] px-1">
-          <div className="space-y-6">
-            {fields.map((field) => {
-              if (field === "image_url") {
-                return <div key={field}>{renderImageField()}</div>;
-              }
-              if (field === "description") {
-                return <div key={field}>{renderDescriptionField()}</div>;
-              }
-              return renderTextField(field);
-            })}
-          </div>
-        </div>
-        <DialogFooter className="bg-gray-50 px-6 py-4 flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            className="px-6 py-2 border-gray-300 hover:bg-gray-100"
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !formData.name?.trim()}
-            className="bg-primary-gold hover:bg-primary-gold/90 text-white px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {item ? "Updating..." : "Adding..."}
+      {resource == "quizzes" && !item ? (
+        <DialogContent
+          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="bg-primary-gold rounded-2xl text-white p-6 -m-6 mb-6">
+            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <FileImage className="w-6 h-6" />
               </div>
-            ) : item ? (
-              "Update"
-            ) : (
-              "Add"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+              {item ? "Edit" : "Add New"} {resourceName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="h-90% overflow-y-scroll">
+            <PracticeQuizForm province_slug={slug} />
+          </div>
+        </DialogContent>
+      ) : (
+        <DialogContent
+          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="bg-primary-gold rounded-2xl text-white p-6 -m-6 mb-6">
+            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <FileImage className="w-6 h-6" />
+              </div>
+              {item ? "Edit" : "Add New"} {resourceName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] px-1">
+            <div className="space-y-6">
+              {fields.map((field) => {
+                if (field === "image_url") {
+                  return <div key={field}>{renderImageField()}</div>;
+                }
+                if (field === "description") {
+                  return <div key={field}>{renderDescriptionField()}</div>;
+                }
+                return renderTextField(field);
+              })}
+            </div>
+          </div>
+          <DialogFooter className="bg-gray-50 px-6 py-4 flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="px-6 py-2 border-gray-300 hover:bg-gray-100"
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                loading || (!formData.name?.trim() && !(resource == "quizzes"))
+              }
+              className="bg-primary-gold hover:bg-primary-gold/90 text-white px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {item ? "Updating..." : "Adding..."}
+                </div>
+              ) : item ? (
+                "Update"
+              ) : (
+                "Add"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      )}
     </Dialog>
   );
 };
