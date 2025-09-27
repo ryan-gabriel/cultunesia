@@ -14,6 +14,11 @@ import {
   FileImage,
   AlertCircle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const Editor = dynamic(() => import("@tinymce/tinymce-react").then(m => m.Editor), {
+  ssr: false,
+});
 
 // Helper function to convert image to PNG
 const convertToPNG = (file) => {
@@ -175,7 +180,7 @@ export default function ProvinceForm({ slug, onSuccess }) {
       const formData = new FormData();
       formData.append("name", name.trim());
       if (description.trim())
-      formData.append("description", description.trim());
+        formData.append("description", description.trim());
       formData.append("population", population);
       if (image) formData.append("image", image);
 
@@ -312,18 +317,52 @@ export default function ProvinceForm({ slug, onSuccess }) {
         </div>
 
         {/* Description */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-gray-700">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-gold focus:border-primary-gold hover:border-gray-400 transition-all duration-200 resize-vertical"
-            placeholder="Enter province description..."
-          />
-        </div>
+        <Editor
+          apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
+          value={description}
+          init={{
+            height: 350,
+            menubar: false,
+            plugins: [
+              "advlist",
+              "autolink",
+              "lists",
+              "link",
+              "image",
+              "charmap",
+              "preview",
+              "anchor",
+              "searchreplace",
+              "visualblocks",
+              "code",
+              "fullscreen",
+              "insertdatetime",
+              "media",
+              "table",
+              "help",
+              "wordcount",
+            ],
+            toolbar: [
+              "undo redo | blocks | bold italic underline strikethrough",
+              "alignleft aligncenter alignright alignjustify",
+              "bullist numlist outdent indent | removeformat",
+              "link image media table | charmap | code preview fullscreen help",
+            ].join(" | "),
+            content_style: `
+                      body { 
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        font-size: 14px;
+                        line-height: 1.6;
+                        color: #374151;
+                        margin: 1rem;
+                      }
+                    `,
+            branding: false,
+          }}
+          onEditorChange={(content) =>
+            setDescription(content)
+          }
+        />
 
         {/* Image Upload */}
         <div className="space-y-3">

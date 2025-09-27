@@ -1,8 +1,15 @@
+import ProvinceDetail from "@/components/page/province/ProvinceDetail";
+import { fetchProvinceBySlug } from "@/utils/ServerProvince";
 import React from "react";
 
-const page = ({ params }) => {
+const Page = async ({ params }) => {
   const provinceSlug = params["province-slug"];
-  return <div>{provinceSlug}</div>;
+
+  const provinceData = await fetchProvinceBySlug(provinceSlug);
+
+  return (
+    <ProvinceDetail provinceData={provinceData} />
+  );
 };
 
-export default page;
+export default Page;
