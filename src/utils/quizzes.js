@@ -1,5 +1,7 @@
 // File: src/utils/quizzes.js
 
+import { supabase } from "@/lib/supabaseClient";
+
 /**
  * Fetch semua quizzes dari backend API
  * @returns {Promise<Array>} - array data quizzes
@@ -61,4 +63,29 @@ export async function fetchQuestionById(quizId, questionId) {
   }
   const data = await res.json();
   return data.question || null;
+}
+
+export async function fetchTodayQuiz() {
+  // 1. ambil user_id dari Supabase Auth
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) throw new Error("User belum login");
+  const userId = data.user.id;
+
+  // 2. bangun query params
+  const params = new URLSearchParams();
+  params.set("today", "true");
+  params.set("user_id", userId); // kirim user_id ke backend
+
+  // 3. panggil endpoint
+  const res = await fetch(`/api/admin/quizzes?${params.toString()}`, {
+    cache: "no-store", // optional: supaya selalu fresh
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData?.error || "Gagal fetch today quiz");
+  }
+
+  const dataRes = await res.json();
+  return dataRes; // { quizzes } atau { message: "Sudah pernah ..." }
 }

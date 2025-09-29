@@ -18,6 +18,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Contoh data provinceData untuk melihat strukturnya
+// {
+//   province: {
+//     id: 8,
+//     name: 'Jawa Barat',
+//     description: 'asdasdasdasdasdasdasd',
+//     image_url: 'https://rdmrruoujekrgxrejigz.supabase.co/storage/v1/object/public/general/provinces/jawa-barat-1758675251843.png',
+//     created_at: '2025-09-24T00:54:14.197502',
+//     updated_at: '2025-09-24T00:54:14.197502',
+//     slug: 'jawa-barat',
+//     population: 5000000
+//   },
+//   funfacts: [
+//     {
+//       id: 1,
+//       fact: 'asdasd',
+//       created_at: '2025-09-28T09:45:34.342624',
+//       province_slug: 'jawa-barat'
+//     }
+//   ]
+// }
 const ProvinceDetail = ({ provinceData }) => {
   const containerRef = useRef(null);
   const heroRef = useRef(null);

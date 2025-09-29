@@ -9,7 +9,7 @@ const allowedResources = [
   "languages",
   "tourism",
   "traditional_clothing",
-  "quizzes"
+  "quizzes",
 ];
 
 // =================== GET ===================
@@ -25,37 +25,24 @@ export async function GET(req, context) {
 
   const supabase = createServerClient();
 
-  const { data: province, error: provinceError } = await supabase
-    .from("provinces")
-    .select("id")
-    .eq("slug", provinceSlug)
-    .single();
-
-  if (provinceError || !province) {
-    return NextResponse.json(
-      { error: "Provinsi tidak ditemukan" },
-      { status: 404 }
-    );
-  }
-
   const { data, error } = await supabase
     .from(resourceSlug)
     .select("*")
-    .eq("province_id", province.id);
+    .eq("province_slug", provinceSlug);
 
-  if (error)
+  if (error) {
     return NextResponse.json(
       { error: `Gagal memuat ${resourceSlug}` },
       { status: 500 }
     );
+  }
 
-  return NextResponse.json({ [resourceSlug]: data });
+  return NextResponse.json({ [resourceSlug]: data || [] });
 }
 
 // =================== POST ===================
 export async function POST(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
-
   if (!allowedResources.includes(resourceSlug)) {
     return NextResponse.json(
       { error: "Resource tidak ditemukan" },
@@ -63,40 +50,40 @@ export async function POST(req, context) {
     );
   }
 
-  const formData = await req.formData();
   const supabase = createServerClient();
+  const formData = await req.formData();
 
-  const { data: province, error: provinceError } = await supabase
+  // cek provinsi exist
+  const { count, error: provinceError } = await supabase
     .from("provinces")
-    .select("id")
-    .eq("slug", provinceSlug)
-    .single();
+    .select("*", { head: true, count: "exact" })
+    .eq("slug", provinceSlug);
 
-  if (provinceError || !province) {
+  if (provinceError || count === 0) {
     return NextResponse.json(
       { error: "Provinsi tidak ditemukan" },
       { status: 404 }
     );
   }
 
-  const image = formData.get("image");
+  // kumpulkan field
   const body = {};
   formData.forEach((value, key) => {
     if (key !== "image") body[key] = value;
   });
 
-  let imageUrl = null;
-  if (image && image.size > 0) {
-    const timestamp = Date.now();
+  // opsional image
+  const image = formData.get("image");
+  if (image?.size > 0) {
     const ext = image.name.split(".").pop();
-    const path = `provinces/${provinceSlug}-${timestamp}.${ext}`;
-    imageUrl = await uploadFileToStorage(image, path);
-    console.log(imageUrl)
+    const path = `provinces/${provinceSlug}-${Date.now()}.${ext}`;
+    const imageUrl = await uploadFileToStorage(image, path);
+    body.image_url = imageUrl; // hanya tambah kalau ada
   }
 
   const { data, error } = await supabase
     .from(resourceSlug)
-    .insert([{ ...body, province_id: province.id, image_url: imageUrl }])
+    .insert([{ ...body, province_slug: provinceSlug }])
     .select()
     .single();
 
@@ -113,7 +100,6 @@ export async function POST(req, context) {
 // =================== PUT ===================
 export async function PUT(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
-
   if (!allowedResources.includes(resourceSlug)) {
     return NextResponse.json(
       { error: "Resource tidak ditemukan" },
@@ -122,37 +108,23 @@ export async function PUT(req, context) {
   }
 
   const supabase = createServerClient();
-
-  // ====== Ambil province ======
-  const { data: province, error: provinceError } = await supabase
-    .from("provinces")
-    .select("id")
-    .eq("slug", provinceSlug)
-    .single();
-
-  if (provinceError || !province) {
-    return NextResponse.json(
-      { error: "Provinsi tidak ditemukan" },
-      { status: 404 }
-    );
-  }
-
-  // ====== Ambil formData ======
   const formData = await req.formData();
+
   const id = formData.get("id");
   if (!id) return NextResponse.json({ error: "ID wajib ada" }, { status: 400 });
 
   const fields = {};
   for (const [key, value] of formData.entries()) {
-    if (key !== "image") fields[key] = value;
+    if (key !== "image" && key !== "id") fields[key] = value;
   }
 
-  // ====== Ambil data lama ======
+  // ambil record lama (cek exist + ambil image_url kalau ada)
   const { data: oldRecord, error: oldError } = await supabase
     .from(resourceSlug)
-    .select("image_url")
+    .select("id, image_url")
     .eq("id", id)
-    .single();
+    .eq("province_slug", provinceSlug)
+    .maybeSingle();
 
   if (oldError || !oldRecord) {
     return NextResponse.json(
@@ -161,31 +133,31 @@ export async function PUT(req, context) {
     );
   }
 
-  let imageUrl = oldRecord.image_url;
-
-  
-  // ====== Handle upload image baru (replace lama) ======
+  // opsional update image
   const newImage = formData.get("image");
-  if (newImage && newImage.size > 0) {
+  if (newImage?.size > 0) {
     let uploadPath;
-
     if (oldRecord.image_url) {
-      // pakai path lama (supaya replace)
       const parts = oldRecord.image_url.split("/general/");
-      uploadPath = parts[1]; // ex: "provinces/jawa-barat-1758331749152.png"
+      uploadPath = parts[1];
     } else {
-      uploadPath = `provinces/${provinceSlug}-${Date.now()}.png`;
+      const ext = newImage.name.split(".").pop() || "png";
+      uploadPath = `provinces/${provinceSlug}-${Date.now()}.${ext}`;
     }
-    console.log(uploadPath)
-    imageUrl = await uploadFileToStorage(newImage, uploadPath, "general", "replace");
+    const imageUrl = await uploadFileToStorage(
+      newImage,
+      uploadPath,
+      "general",
+      "replace"
+    );
+    fields.image_url = imageUrl;
   }
 
-  // ====== Update DB ======
   const { data, error } = await supabase
     .from(resourceSlug)
-    .update({ ...fields, image_url: imageUrl })
+    .update(fields)
     .eq("id", id)
-    .eq("province_id", province.id)
+    .eq("province_slug", provinceSlug)
     .select()
     .single();
 
@@ -202,7 +174,6 @@ export async function PUT(req, context) {
 // =================== DELETE ===================
 export async function DELETE(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
-
   if (!allowedResources.includes(resourceSlug)) {
     return NextResponse.json(
       { error: "Resource tidak ditemukan" },
@@ -211,54 +182,42 @@ export async function DELETE(req, context) {
   }
 
   const { id } = await req.json();
-  if (!id) {
-    return NextResponse.json({ error: "ID wajib ada" }, { status: 400 });
-  }
+  if (!id) return NextResponse.json({ error: "ID wajib ada" }, { status: 400 });
 
   const supabase = createServerClient();
 
-  // Pastikan provinsi ada
-  const { data: province, error: provinceError } = await supabase
-    .from("provinces")
-    .select("id")
-    .eq("slug", provinceSlug)
-    .single();
+  // ambil record (cek exist + ambil image_url kalau ada)
+  const { data: resourceItem, error: fetchError } = await supabase
+    .from(resourceSlug)
+    .select("id, image_url")
+    .eq("id", id)
+    .eq("province_slug", provinceSlug)
+    .maybeSingle();
 
-  if (provinceError || !province) {
+  if (fetchError || !resourceItem) {
     return NextResponse.json(
-      { error: "Provinsi tidak ditemukan" },
+      { error: `${resourceSlug} tidak ditemukan` },
       { status: 404 }
     );
   }
 
-  // Ambil resource yang mau dihapus (untuk ambil image_url)
-  const { data: resourceItem } = await supabase
-    .from(resourceSlug)
-    .select("image_url")
-    .eq("id", id)
-    .eq("province_id", province.id)
-    .single();
-
-  // Kalau ada gambar, hapus juga dari storage
-  if (resourceItem?.image_url) {
-    const bucket = "general"
+  // hapus file kalau memang ada image_url
+  if (resourceItem.image_url) {
+    const bucket = "general";
     try {
-      // Ambil relative path dari URL public
       const publicUrlPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/`;
       const filePath = resourceItem.image_url.replace(publicUrlPrefix, "");
-
       await supabase.storage.from(bucket).remove([filePath]);
     } catch (err) {
       console.error("Gagal hapus image:", err);
     }
   }
 
-  // Hapus record di tabel
   const { error } = await supabase
     .from(resourceSlug)
     .delete()
     .eq("id", id)
-    .eq("province_id", province.id);
+    .eq("province_slug", provinceSlug);
 
   if (error) {
     return NextResponse.json(

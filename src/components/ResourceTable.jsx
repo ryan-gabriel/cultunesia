@@ -142,8 +142,8 @@ export const ResourceTable = ({ slug, resource }) => {
               <DeleteResourceDialog
                 slug={slug}
                 resource={resource}
-                itemId={item.id}
-                itemName={item.name || resource}
+                itemId={item.id ?? item.quiz_id}
+                itemName={item.name || item.title || resource}
                 onSuccess={handleSuccess}
               />
             </TableCell>

@@ -27,6 +27,7 @@ const resourceFields = {
     "description",
     "image_url",
     "longitude",
+    "latitude",
     "maps_url",
     "street_view_url",
     "panorama_id",
@@ -426,7 +427,11 @@ export const ResourceFormDialog = ({
             <Button
               onClick={handleSubmit}
               disabled={
-                loading || (!formData.name?.trim() && !(resource == "quizzes"))
+                loading ||
+                (!formData.name?.trim() &&
+                  !(resource == "quizzes") &&
+                  !formData.fact?.trim() &&
+                  resource == "funfacts")
               }
               className="bg-primary-gold hover:bg-primary-gold/90 text-white px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >

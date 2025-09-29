@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabaseServer";
 import { v4 as uuidv4 } from "uuid";
 
+// simple shuffle function (sama seperti [quiz-id] endpoint)
+function shuffleArray(array) {
+  return array
+    .map((value) => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+}
+
 export async function POST(request) {
   try {
     const supabase = createServerClient();
@@ -91,10 +99,7 @@ export async function POST(request) {
         if (pairError) throw pairError;
       }
 
-      if (
-        (q.type === "short_answer") &&
-        Array.isArray(q.answer_keys)
-      ) {
+      if (q.type === "short_answer" && Array.isArray(q.answer_keys)) {
         const keysData = q.answer_keys.map((ans) => ({
           key_id: uuidv4(),
           question_id,
@@ -116,12 +121,15 @@ export async function POST(request) {
 export async function GET(req) {
   const supabase = createServerClient();
 
-  // ambil query parameter dari URL
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type") ?? "daily";
   const provinceSlug = searchParams.get("province_slug");
+  const todayParam = searchParams.get("today"); // "true" jika ingin filter hari ini
+  const userId = searchParams.get("user_id"); // tambahan untuk cek user attempts
 
   let query = supabase.from("quizzes").select("*");
+
+  // filter by type
   if (type === "province") {
     if (!provinceSlug) {
       return NextResponse.json(
@@ -134,6 +142,12 @@ export async function GET(req) {
     query = query.eq("category", "daily");
   }
 
+  // filter by today if requested
+  if (todayParam === "true") {
+    const today = new Date().toISOString().split("T")[0];
+    query = query.eq("scheduled_date", today);
+  }
+
   const { data: quizzes, error } = await query;
 
   if (error) {
@@ -143,5 +157,158 @@ export async function GET(req) {
     );
   }
 
+  // Jika tidak ada quiz ditemukan
+  if (!quizzes || quizzes.length === 0) {
+    return NextResponse.json({
+      message: "Tidak ada quiz yang tersedia",
+      quizzes: [],
+    });
+  }
+
+  // Jika ada userId dan ini adalah request untuk today's quiz
+  if (userId && todayParam === "true") {
+    // Cek apakah user sudah pernah mengerjakan quiz hari ini
+    const quizIds = quizzes.map((quiz) => quiz.quiz_id);
+
+    const { data: attempts, error: attemptError } = await supabase
+      .from("user_quiz_attempts")
+      .select("quiz_id, finished_at, score")
+      .eq("user_id", userId)
+      .in("quiz_id", quizIds)
+      .not("finished_at", "is", null); // hanya yang sudah selesai
+
+    if (attemptError) {
+      return NextResponse.json(
+        { error: "Gagal mengecek riwayat quiz", details: attemptError.message },
+        { status: 500 }
+      );
+    }
+
+    // Jika user sudah mengerjakan quiz hari ini
+    if (attempts && attempts.length > 0) {
+      const completedQuiz = attempts[0];
+      const quizDetail = quizzes.find(
+        (q) => q.quiz_id === completedQuiz.quiz_id
+      );
+
+      return NextResponse.json({
+        message: "Anda sudah mengerjakan quiz hari ini",
+        already_completed: true,
+        quiz_title: quizDetail?.title,
+        score: completedQuiz.score,
+        completed_at: completedQuiz.finished_at,
+      });
+    }
+  }
+
+  // Jika user belum pernah mengerjakan atau bukan request today's quiz
+  // Untuk today's quiz, ambil detail questions dengan format sama seperti [quiz-id] endpoint
+  if (todayParam === "true" && quizzes.length > 0) {
+    const quiz = quizzes[0]; // ambil quiz pertama untuk today
+
+    try {
+      // Fetch all questions
+      const { data: qs, error: questionsError } = await supabase
+        .from("questions")
+        .select("question_id, type, text, points, image_url")
+        .eq("quiz_id", quiz.quiz_id);
+
+      if (questionsError) throw questionsError;
+
+      const questionIds = qs.map((q) => q.question_id);
+
+      // Separate question IDs by type
+      const multipleChoiceIds = qs
+        .filter((q) => q.type === "multiple_choice")
+        .map((q) => q.question_id);
+      const matchingIds = qs
+        .filter((q) => q.type === "matching")
+        .map((q) => q.question_id);
+
+      // Fetch options and matching pairs
+      const [optionsRes, pairsRes] = await Promise.all([
+        supabase
+          .from("options")
+          .select("option_id, question_id, text")
+          .in("question_id", multipleChoiceIds),
+        supabase
+          .from("matching_pairs")
+          .select("pair_id, question_id, left_text, right_text")
+          .in("question_id", matchingIds),
+      ]);
+
+      if (optionsRes.error) throw optionsRes.error;
+      if (pairsRes.error) throw pairsRes.error;
+
+      const options = optionsRes.data || [];
+      const matchingPairs = pairsRes.data || [];
+
+      // Attach nested data & shuffle (sama seperti [quiz-id] endpoint)
+      const questions = qs.map((q) => {
+        if (q.type === "multiple_choice") {
+          const opts = options.filter((o) => o.question_id === q.question_id);
+          return { ...q, options: shuffleArray(opts) };
+        }
+        if (q.type === "matching") {
+          const pairs = matchingPairs.filter(
+            (p) => p.question_id === q.question_id
+          );
+          return { ...q, matching_pairs: shuffleArray(pairs) };
+        }
+        // short_answer -> no answers sent
+        return q;
+      });
+
+      return NextResponse.json({
+        quiz: {
+          quiz_id: quiz.quiz_id,
+          title: quiz.title,
+        },
+        questions,
+      });
+    } catch (err) {
+      console.error("Error fetching quiz details:", err);
+      return NextResponse.json(
+        { error: "Gagal mengambil detail quiz", details: err.message },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Untuk request selain today's quiz, return simple list
   return NextResponse.json({ quizzes });
 }
+
+// Contoh penggunaan:
+// GET /api/quizzes?type=daily&today=true&user_id=123
+// Response jika sudah pernah:
+// {
+//   "message": "Anda sudah mengerjakan quiz hari ini",
+//   "already_completed": true,
+//   "quiz_title": "Quiz Harian 28 September",
+//   "score": 85,
+//   "completed_at": "2025-09-28T10:30:00"
+// }
+
+// Response jika belum pernah:
+// {
+//   "quiz": {
+//     "quiz_id": "40d466a7-1862-41e6-a1cf-5f659425cab0",
+//     "title": "Quiz Harian 28 September",
+//     "category": "daily",
+//     "scheduled_date": "2025-09-28"
+//   },
+//   "questions": [
+//     {
+//       "question_id": "0b673d0c-783d-46b8-aa53-9a203f4cdffd",
+//       "type": "multiple_choice",
+//       "text": "Which of these is traditional clothing in Japan?",
+//       "points": 1,
+//       "image_url": null,
+//       "options": [
+//         { "option_id": "opt1", "text": "Kimono" },
+//         { "option_id": "opt2", "text": "Sari" }
+//       ]
+//     }
+//   ]
+// }

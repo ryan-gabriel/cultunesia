@@ -6,8 +6,12 @@ export async function GET(req, context) {
   const params = await context.params;
   const { provinceSlug } = params;
 
+  const { searchParams } = new URL(req.url);
+  const include = searchParams.get("include")?.split(",") || [];
+
   const supabase = createServerClient();
 
+  // Base query for province
   const { data: province, error } = await supabase
     .from("provinces")
     .select("*")
@@ -21,7 +25,38 @@ export async function GET(req, context) {
     );
   }
 
-  return NextResponse.json({ province });
+  // Relations map (extendable)
+  const relations = {
+    funfacts: "funfacts",
+    tourism: "tourism",
+    languages: "languages",
+    foods: "foods",
+    ethnic_groups: "ethnic_groups",
+    traditional_clothing: "traditional_clothing",
+    quizzes: "quizzes",
+  };
+
+  const extras = {};
+
+  for (const key of include) {
+    if (relations[key]) {
+      const { data, error: relError } = await supabase
+        .from(relations[key])
+        .select("*")
+        .eq("province_slug", province.slug); // ✅ fix here
+
+      if (relError) {
+        console.error(relError);
+      } else {
+        extras[key] = data;
+      }
+    }
+  }
+  console.log(extras)
+  return NextResponse.json({
+    province,
+    ...extras,
+  });
 }
 
 export async function POST(req, context) {
@@ -67,7 +102,7 @@ export async function POST(req, context) {
 
   const { data, error } = await supabase
     .from(resourceSlug)
-    .insert([{ ...body, province_id: province.id, image_url: imageUrl }])
+    .insert([{ ...body, province_slug: province.slug, image_url: imageUrl }])
     .select()
     .single();
 

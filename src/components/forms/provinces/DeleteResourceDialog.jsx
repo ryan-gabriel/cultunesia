@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 export const DeleteResourceDialog = ({
@@ -24,8 +23,12 @@ export const DeleteResourceDialog = ({
   const handleDelete = async () => {
     if (!itemId) return;
     setLoading(true);
+    const urlEndpoint =
+      resource == "quizzes"
+        ? `/api/admin/quizzes/${itemId}/`
+        : `/api/provinces/${slug}/${resource}/`;
     try {
-      const res = await fetch(`/api/provinces/${slug}/${resource}`, {
+      const res = await fetch(urlEndpoint, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: itemId }),
@@ -43,30 +46,36 @@ export const DeleteResourceDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="destructive">
-          Hapus
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>Konfirmasi Hapus</DialogTitle>
-        </DialogHeader>
-        <p>Apakah Anda yakin ingin menghapus {itemName || resource} ini?</p>
-        <DialogFooter className="space-x-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Batal
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={loading}
-          >
-            {loading ? "Menghapus..." : "Hapus"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      {/* Manual trigger button */}
+      <Button size="sm" variant="destructive" onClick={() => setOpen(true)}>
+        Hapus
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Hapus</DialogTitle>
+          </DialogHeader>
+
+          <p className="my-4">
+            Apakah Anda yakin ingin menghapus {itemName || resource} ini?
+          </p>
+
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              {loading ? "Menghapus..." : "Hapus"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

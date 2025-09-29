@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 
 const Page = () => {
   const params = useParams();
-  const quizId = params["quiz-id"];
+  const quizId = params["quiz-slug"];
   const questionId = params["question-id"];
   const router = useRouter();
 
