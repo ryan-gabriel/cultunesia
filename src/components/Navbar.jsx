@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const navLinks = [
@@ -29,6 +30,8 @@ const Navbar = () => {
     { label: "Leaderboard", href: "#" },
     { label: "Provinces", href: "#" },
   ];
+
+  const user = useAuth()
 
   return (
     <motion.nav

@@ -20,3 +20,33 @@ export async function fetchProvinceBySlug(slug, options = {}) {
   const data = await res.json();
   return data; // return whole response (province + extras)
 }
+
+const allowed_resource = [
+  "tourism",
+  "languages",
+  "foods",
+  "ethnic_groups",
+  "traditional_clothing",
+];
+
+export async function fetchProvinceResource(provinceSlug, resource) {
+  if (!provinceSlug) throw new Error("Slug provinsi wajib diisi");
+  if (!resource) throw new Error("Resource wajib diisi");
+  if (!allowed_resource.includes(resource)) {
+    throw new Error(`Resource tidak valid: ${resource}`);
+  }
+
+  const h = await headers();
+  const host = h.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+
+  const url = `${protocol}://${host}/api/provinces/${encodeURIComponent(
+    provinceSlug
+  )}/${encodeURIComponent(resource)}`;
+
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Gagal fetch resource provinsi");
+
+  const data = await res.json();
+  return data;
+}
