@@ -40,19 +40,19 @@ const MapSvg = ({ provincesFromDB = [] }) => {
 
     const timeline = gsap.timeline();
     timeline.to(provinceElements, {
-      duration: 1.5,
+      duration: 1,
       x: 0,
       y: 0,
       rotation: 0,
       opacity: 1,
-      stagger: 0.05,
+      stagger: 0.03,
       ease: "power3.out",
     });
 
     timeline.to(
       otherElements,
       {
-        duration: 0.5,
+        duration: 0.3,
         opacity: 1,
         stagger: 0.02,
         ease: "power1.inOut",
@@ -228,11 +228,17 @@ const MapSvg = ({ provincesFromDB = [] }) => {
           ref={tooltipRef}
           className="fixed pointer-events-none z-50 p-4 rounded-xl shadow-xl border w-64 bg-white text-gray-900"
           style={{
-            left: Math.min(
-              hoveredProvince.x + 20,
-              (typeof window !== "undefined" ? window.innerWidth : 1200) - 270
-            ),
-            top: hoveredProvince.y + 20,
+            // Cek apakah mouse ada di sebelah kanan layar
+            left:
+              hoveredProvince.x > window.innerWidth / 2
+                ? hoveredProvince.x - 280 // tampil ke kiri cursor
+                : hoveredProvince.x + 20, // tampil ke kanan cursor
+
+            // Cek apakah mouse ada di bagian bawah layar
+            top:
+              hoveredProvince.y > window.innerHeight / 2
+                ? hoveredProvince.y - 150 // tampil ke atas cursor
+                : hoveredProvince.y + 10, // tampil ke bawah cursor
           }}
         >
           <h3 className="font-bold text-lg">{hoveredProvince.name}</h3>
@@ -245,6 +251,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
           </p>
         </div>
       )}
+
     </div>
   );
 };

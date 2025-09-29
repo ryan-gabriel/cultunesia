@@ -39,42 +39,50 @@ export default function Home() {
   const isDragging = useRef(false);
   const startPos = useRef({ x: 0, y: 0 });
 
-  // Check if screen is mobile/tablet
+  // Check if screen is mobile/tablet and set initial scale
   useEffect(() => {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      // Auto-fit map on mobile
-      if (mobile && scale === 1) {
-        const containerWidth = window.innerWidth - 32; // Account for padding
-        const mapWidth = 1875.5; // SVG viewBox width
-        const optimalScale = Math.min((containerWidth / mapWidth) * 1.2, 1);
-        setScale(optimalScale);
+      // Auto-fit map on mobile on initial load
+      if (mobile) {
+        // Default zoom 350% di mobile
+        setScale(3.5);
+        setPosition({ x: 0, y: 1000 });
+      } else {
+        // Default zoom 100% di desktop
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
       }
+
     };
 
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, [scale]);
+  }, []); // <-- MODIFIED: Dependency array is now empty to run only once on mount
 
   const handleZoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev * 1.3, isMobile ? 3 : 4));
+    setScale((prev) => Math.min(prev * 1.3, isMobile ? 10 : 10));
   }, [isMobile]);
 
+  // --- MODIFIED handleZoomOut ---
   const handleZoomOut = useCallback(() => {
-    setScale((prev) => Math.max(prev / 1.3, 0.2));
-  }, []);
+    // For desktop, minimum scale is 1 (100%). For mobile, allow smaller zoom.
+    const minScale = isMobile ? 0.2 : 1;
+    setScale((prev) => Math.max(prev / 1.3, minScale));
+  }, [isMobile]); // <-- MODIFIED: Added isMobile dependency
 
   const handleReset = useCallback(() => {
     if (isMobile) {
       // Smart reset for mobile - fit to screen
       const containerWidth = window.innerWidth - 32;
       const mapWidth = 1875.5;
-      const optimalScale = Math.min((containerWidth / mapWidth) * 1.2, 1);
+      const optimalScale = (containerWidth / mapWidth) * 1.1;
       setScale(optimalScale);
     } else {
+      // For desktop, reset to 100%
       setScale(1);
     }
     setPosition({ x: 0, y: 0 });
@@ -100,6 +108,7 @@ export default function Home() {
     }
   }, [isFullscreen, isMobile]);
 
+  // --- MODIFIED handleWheel ---
   const handleWheel = useCallback(
     (e) => {
       if (isMobile) return; // Disable wheel zoom on mobile
@@ -112,8 +121,10 @@ export default function Home() {
       const wheel = e.deltaY < 0 ? 1 : -1;
       const zoom = Math.exp(wheel * zoomIntensity);
       
-      const maxScale = isMobile ? 3 : 4;
-      const newScale = Math.min(Math.max(scale * zoom, 0.2), maxScale);
+      const maxScale = isMobile ? 10 : 10;
+      // For desktop, minimum scale is 1 (100%)
+      const minScale = 1;
+      const newScale = Math.min(Math.max(scale * zoom, minScale), maxScale);
       
       // Calculate zoom center point
       const mouseX = e.clientX - rect.left;
@@ -130,8 +141,11 @@ export default function Home() {
   );
 
   const handleMouseDown = (e) => {
+    // Jangan aktifkan dragging di desktop kalau scale == 1
+    if (!isMobile && scale === 1) return;
+
     if (e.target.closest('g[class*="province"]')) return;
-    
+
     isDragging.current = true;
     startPos.current = {
       x: e.clientX - position.x,
@@ -143,7 +157,11 @@ export default function Home() {
     e.preventDefault();
   };
 
+
   const handleTouchStart = (e) => {
+    // Cegah geser kalau desktop & zoom = 1
+    if (!isMobile && scale === 1) return;
+
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       isDragging.current = true;
@@ -153,6 +171,7 @@ export default function Home() {
       };
     }
   };
+
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
@@ -283,7 +302,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   onClick={handleZoomIn}
-                  disabled={scale >= 3}
+                  disabled={scale >= 5}
                   className="h-12 bg-primary-gold hover:bg-primary-gold/90 text-black flex flex-col gap-1 text-xs"
                 >
                   <ZoomIn className="w-4 h-4" />
@@ -330,7 +349,7 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={handleZoomIn}
-                disabled={scale >= 4}
+                disabled={scale >= 5}
                 className="bg-primary-gold hover:bg-primary-gold/90 text-black w-10 h-10 p-0"
               >
                 <ZoomIn className="w-4 h-4" />
@@ -338,7 +357,8 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={handleZoomOut}
-                disabled={scale <= 0.2}
+                // --- MODIFIED disabled condition ---
+                disabled={scale <= 1}
                 className="bg-primary-gold hover:bg-primary-gold/90 text-black w-10 h-10 p-0"
               >
                 <ZoomOut className="w-4 h-4" />
