@@ -35,7 +35,7 @@ const Navbar = () => {
 
   return (
     <motion.nav
-      className="w-full flex items-center justify-between px-6 py-4 bg-white/70 backdrop-blur-lg shadow-sm sticky top-0 z-50"
+      className="w-full flex items-center justify-between px-8 py-5 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-50"
       initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -44,22 +44,26 @@ const Navbar = () => {
       <motion.a
         href="/"
         className="flex items-center gap-2"
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.2 }}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       >
-        <img src="/Logo Full.svg" alt="Cultunesia Logo" className="w-36" />
+        <img src="/Logo Full.svg" alt="Cultunesia Logo" className="w-40" />
       </motion.a>
 
       {/* Desktop Nav Links */}
-      <div className="hidden md:flex items-center gap-6">
+      <div className="hidden md:flex items-center gap-8">
         {navLinks.map((link, i) => (
           <motion.a
             key={i}
             href={link.href}
-            className="flex items-center gap-2 text-gray-700 hover:text-primary-blue transition-colors"
-            whileHover={{ y: -2 }}
+            className="relative text-sm font-medium text-gray-600 hover:text-primary-blue transition-colors group"
+            whileHover={{ y: -1 }}
+            transition={{ duration: 0.2 }}
           >
             {link.label}
+            <motion.span
+              className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-blue group-hover:w-full transition-all duration-300"
+            />
           </motion.a>
         ))}
       </div>
@@ -68,10 +72,10 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         {/* Login / Register */}
         <div className="hidden md:flex gap-3">
-          <Button variant="ghost" className="flex items-center gap-1">
+          <Button variant="ghost" className="flex items-center gap-2 text-sm font-medium hover:bg-gray-50">
             <LogIn className="w-4 h-4" /> Login
           </Button>
-          <Button variant="default" className="flex items-center gap-1">
+          <Button variant="default" className="flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md transition-shadow">
             <UserPlus className="w-4 h-4" /> Register
           </Button>
         </div>
