@@ -46,7 +46,7 @@ const ProvinceDetail = ({ provinceData }) => {
       data: tourism
     },
     {
-      id: "language",
+      id: "languages",
       title: "Bahasa Daerah",
       icon: Globe,
       description: "Kekayaan linguistik nusantara",
@@ -55,7 +55,7 @@ const ProvinceDetail = ({ provinceData }) => {
       data: language
     },
     {
-      id: "food",
+      id: "foods",
       title: "Kuliner Khas",
       icon: Utensils,
       description: "Cita rasa autentik daerah",

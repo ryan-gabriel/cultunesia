@@ -17,10 +17,16 @@
 //   ]
 // }
 
+import Avatar from "@/components/Navbar/UserAvatar";
+import Navbar from "@/components/Navbar/Navbar";
+import { AuthProvider } from "@/context/AuthContext";
 import React from "react";
 
 const Tourism = ({ data }) => {
-  return <div></div>;
+  return (
+    <div>
+    </div>
+  );
 };
 
 export default Tourism;

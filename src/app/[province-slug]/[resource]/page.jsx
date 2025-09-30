@@ -42,10 +42,6 @@ const Page = async ({ params }) => {
 
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4 capitalize">
-          {resourceSlug.replace("_", " ")} di {provinceSlug}
-        </h1>
-
         {/* ✅ Render component sesuai resourceSlug */}
         {resourceSlug === "tourism" && <Tourism data={data} />}
         {resourceSlug === "languages" && <Language data={data} />}

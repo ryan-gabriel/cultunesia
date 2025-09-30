@@ -1,15 +1,14 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Menu, 
-  X, 
-  Info, 
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Menu,
+  X,
+  Info,
   Navigation,
   Maximize2,
   Minimize2,
@@ -18,13 +17,24 @@ import {
   Globe,
   Settings,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import MapSvg from "@/components/MapSvg";
 
 export default function Home() {
@@ -34,7 +44,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [controlsExpanded, setControlsExpanded] = useState(false);
-  
+
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const isDragging = useRef(false);
@@ -45,7 +55,7 @@ export default function Home() {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
+
       // Auto-fit map on mobile on initial load
       if (mobile) {
         // Default zoom 350% di mobile
@@ -56,12 +66,11 @@ export default function Home() {
         setScale(1);
         setPosition({ x: 0, y: 0 });
       }
-
     };
 
     checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []); // <-- MODIFIED: Dependency array is now empty to run only once on mount
 
   const handleZoomIn = useCallback(() => {
@@ -87,7 +96,7 @@ export default function Home() {
       setScale(1);
     }
     setPosition({ x: 0, y: 0 });
-  },[isMobile]);
+  }, [isMobile]);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(!isFullscreen);
@@ -98,11 +107,11 @@ export default function Home() {
         const containerHeight = window.innerHeight;
         const mapWidth = 1875.5;
         const mapHeight = 860.859;
-        
+
         const scaleX = containerWidth / mapWidth;
         const scaleY = containerHeight / mapHeight;
         const optimalScale = Math.min(scaleX, scaleY) * 0.9;
-        
+
         setScale(optimalScale);
         setPosition({ x: 0, y: 0 });
       }, 100);
@@ -113,7 +122,7 @@ export default function Home() {
   const handleWheel = useCallback(
     (e) => {
       if (isMobile) return; // Disable wheel zoom on mobile
-      
+
       e.preventDefault();
       const rect = mapRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -121,20 +130,20 @@ export default function Home() {
       const zoomIntensity = 0.1;
       const wheel = e.deltaY < 0 ? 1 : -1;
       const zoom = Math.exp(wheel * zoomIntensity);
-      
+
       const maxScale = isMobile ? 10 : 10;
       // For desktop, minimum scale is 1 (100%)
       const minScale = 1;
       const newScale = Math.min(Math.max(scale * zoom, minScale), maxScale);
-      
+
       // Calculate zoom center point
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      
+
       const scaleChange = newScale / scale;
       const newX = position.x - (mouseX - position.x) * (scaleChange - 1);
       const newY = position.y - (mouseY - position.y) * (scaleChange - 1);
-      
+
       setScale(newScale);
       setPosition({ x: newX, y: newY });
     },
@@ -158,7 +167,6 @@ export default function Home() {
     e.preventDefault();
   };
 
-
   const handleTouchStart = (e) => {
     // Cegah geser kalau desktop & zoom = 1
     if (!isMobile && scale === 1) return;
@@ -172,7 +180,6 @@ export default function Home() {
       };
     }
   };
-
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
@@ -203,39 +210,39 @@ export default function Home() {
   // Keyboard navigation (desktop only)
   useEffect(() => {
     if (isMobile) return;
-    
+
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      
+      if (e.target.tagName === "INPUT") return;
+
       switch (e.key) {
-        case '+':
-        case '=':
+        case "+":
+        case "=":
           e.preventDefault();
           handleZoomIn();
           break;
-        case '-':
+        case "-":
           e.preventDefault();
           handleZoomOut();
           break;
-        case 'r':
-        case 'R':
+        case "r":
+        case "R":
           e.preventDefault();
           handleReset();
           break;
-        case 'f':
-        case 'F':
+        case "f":
+        case "F":
           e.preventDefault();
           toggleFullscreen();
           break;
-        case 'Escape':
+        case "Escape":
           setShowInfo(false);
           setControlsExpanded(false);
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleReset, handleZoomIn, handleZoomOut, isMobile, toggleFullscreen]);
 
   useEffect(() => {
@@ -267,7 +274,11 @@ export default function Home() {
             </div>
             <span className="text-sm font-medium text-gray-900">Kontrol</span>
           </div>
-          {controlsExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+          {controlsExpanded ? (
+            <ChevronDown className="w-5 h-5" />
+          ) : (
+            <ChevronUp className="w-5 h-5" />
+          )}
         </button>
 
         {/* Expanded Controls */}
@@ -317,8 +328,14 @@ export default function Home() {
                 variant="outline"
                 className="w-full h-12 justify-start gap-3"
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                <span>{isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}</span>
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+                <span>
+                  {isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                </span>
               </Button>
 
               {/* Zoom Level */}
@@ -336,7 +353,7 @@ export default function Home() {
 
   // Desktop Controls Component
   const DesktopControls = () => (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.6 }}
@@ -382,13 +399,20 @@ export default function Home() {
                 variant="outline"
                 className="border-gray-200 hover:bg-gray-50 w-10 h-10 p-0"
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
               </Button>
             </div>
 
             {/* Zoom Level */}
             <div className="px-2 py-1">
-              <Badge variant="secondary" className="text-xs w-full justify-center">
+              <Badge
+                variant="secondary"
+                className="text-xs w-full justify-center"
+              >
                 {zoomLevel}%
               </Badge>
             </div>
@@ -400,11 +424,14 @@ export default function Home() {
 
   return (
     <TooltipProvider>
-      <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 transition-all duration-500 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-        
+      <div
+        className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 transition-all duration-500 ${
+          isFullscreen ? "fixed inset-0 z-50" : ""
+        }`}
+      >
         {/* Header - Hidden on mobile fullscreen */}
         {!(isMobile && isFullscreen) && (
-          <motion.header 
+          <motion.header
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
@@ -413,7 +440,7 @@ export default function Home() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-14 md:h-16">
                 {/* Logo */}
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-2 md:gap-3"
                   whileHover={{ scale: 1.02 }}
                 >
@@ -421,18 +448,30 @@ export default function Home() {
                     <MapPin className="w-4 h-4 md:w-6 md:h-6 text-black" />
                   </div>
                   <div>
-                    <h1 className="text-lg md:text-xl font-bold text-gray-900">Peta Indonesia</h1>
-                    <p className="text-xs text-gray-500 hidden sm:block">Jelajahi Nusantara</p>
+                    <h1 className="text-lg md:text-xl font-bold text-gray-900">
+                      Peta Indonesia
+                    </h1>
+                    <p className="text-xs text-gray-500 hidden sm:block">
+                      Jelajahi Nusantara
+                    </p>
                   </div>
                 </motion.div>
 
                 {/* Desktop Navigation */}
                 <nav className="hidden lg:flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-primary-gold">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-primary-gold"
+                  >
                     <Globe className="w-4 h-4 mr-2" />
                     Provinsi
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-primary-gold">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-primary-gold"
+                  >
                     <Search className="w-4 h-4 mr-2" />
                     Cari
                   </Button>
@@ -451,19 +490,32 @@ export default function Home() {
                         <SheetTitle>Menu</SheetTitle>
                       </SheetHeader>
                       <div className="mt-6 space-y-3">
-                        <Button variant="ghost" className="w-full justify-start">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                        >
                           <Globe className="w-4 h-4 mr-3" />
                           Provinsi
                         </Button>
-                        <Button variant="ghost" className="w-full justify-start">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                        >
                           <Search className="w-4 h-4 mr-3" />
                           Cari
                         </Button>
                         <div className="pt-4 border-t">
-                          <h3 className="text-sm font-medium mb-3 text-gray-900">Bantuan</h3>
+                          <h3 className="text-sm font-medium mb-3 text-gray-900">
+                            Bantuan
+                          </h3>
                           <div className="space-y-2 text-sm text-gray-600">
                             <div>• Seret untuk menggeser peta</div>
-                            <div>• {isMobile ? 'Pinch untuk zoom' : 'Scroll untuk zoom'}</div>
+                            <div>
+                              •{" "}
+                              {isMobile
+                                ? "Pinch untuk zoom"
+                                : "Scroll untuk zoom"}
+                            </div>
                             <div>• Klik provinsi untuk detail</div>
                           </div>
                         </div>
@@ -477,14 +529,14 @@ export default function Home() {
         )}
 
         {/* Main Content */}
-        <main 
+        <main
           ref={containerRef}
           className={`relative transition-all duration-500 ${
-            isFullscreen 
-              ? 'h-screen' 
-              : isMobile 
-                ? 'h-[calc(100vh-3.5rem)]' 
-                : 'h-[calc(100vh-4rem)]'
+            isFullscreen
+              ? "h-screen"
+              : isMobile
+              ? "h-[calc(100vh-3.5rem)]"
+              : "h-[calc(100vh-4rem)]"
           }`}
         >
           {/* Controls */}
@@ -492,7 +544,7 @@ export default function Home() {
 
           {/* Status Bar - Desktop only */}
           {!isMobile && !isFullscreen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
@@ -532,12 +584,15 @@ export default function Home() {
             {/* Grid Pattern Overlay - Hidden on mobile for performance */}
             {!isMobile && (
               <div className="absolute inset-0 opacity-5">
-                <div className="w-full h-full" style={{
-                  backgroundImage: `
+                <div
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: `
                     radial-gradient(circle at 1px 1px, rgba(0,0,0,0.1) 1px, transparent 0)
                   `,
-                  backgroundSize: '20px 20px'
-                }} />
+                    backgroundSize: "20px 20px",
+                  }}
+                />
               </div>
             )}
 
@@ -562,7 +617,9 @@ export default function Home() {
             >
               <div className="text-center px-4">
                 <div className="w-8 h-8 border-4 border-primary-gold border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
-                <p className="text-sm text-gray-600">Memuat peta Indonesia...</p>
+                <p className="text-sm text-gray-600">
+                  Memuat peta Indonesia...
+                </p>
               </div>
             </motion.div>
           </motion.div>
