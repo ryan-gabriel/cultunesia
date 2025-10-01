@@ -66,7 +66,7 @@ const BlogDetail = ({ data }) => {
       </div>
 
       <motion.main
-        className="relative z-10 container mx-auto px-4 sm:px-6 py-24 sm:py-32"
+        className="relative z-10 container mx-auto px-4 sm:px-4 py-12 sm:py-20"
         variants={containerVariants}
         initial={mounted ? "hidden" : false}
         animate="visible"

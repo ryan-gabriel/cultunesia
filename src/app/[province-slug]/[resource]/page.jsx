@@ -5,6 +5,7 @@ import Language from "@/components/page/province/resource/Language";
 import Food from "@/components/page/province/resource/Food";
 import EthnicGroup from "@/components/page/province/resource/EthnicGroup";
 import TraditionalClothing from "@/components/page/province/resource/TraditionalClothing";
+import { notFound } from "next/navigation";
 
 const allowed_resource = [
   "tourism",
@@ -20,11 +21,7 @@ const Page = async ({ params }) => {
 
   // ✅ Validasi resource slug
   if (!allowed_resource.includes(resourceSlug)) {
-    return (
-      <div className="p-6 text-red-600">
-        Resource <b>{resourceSlug}</b> tidak valid.
-      </div>
-    );
+    return notFound();
   }
 
   try {

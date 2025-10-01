@@ -4,18 +4,48 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles } from "lucide-react";
-
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  LogIn,
+  Sparkles,
+  ArrowLeft,
+  Sun,
+  Moon,
+  Laptop,
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useTheme } from "@/context/ThemeProvider";
 // --- Reusable Form Components ---
 
-const InputField = ({ name, type, value, onChange, placeholder, children, icon: Icon }) => (
-  <motion.div 
+const InputField = ({
+  name,
+  type,
+  value,
+  onChange,
+  placeholder,
+  children,
+  icon: Icon,
+}) => (
+  <motion.div
     className="space-y-2"
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4 }}
   >
-    <label htmlFor={name} className="block text-gray-700 dark:text-gray-300 text-sm font-semibold tracking-wide">
+    <label
+      htmlFor={name}
+      className="block text-gray-700 dark:text-gray-300 text-sm font-semibold tracking-wide"
+    >
       {name === "email" ? "Alamat Email" : "Password"}
     </label>
     <div className="relative group">
@@ -69,6 +99,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
+  const { theme, setTheme } = useTheme();
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -118,28 +150,87 @@ export default function LoginPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-amber-100/10 to-yellow-100/10 dark:from-amber-500/5 dark:to-yellow-500/5 rounded-full blur-3xl" />
       </div>
 
-      <motion.div 
+      <motion.div
         className="w-full max-w-md relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <motion.div 
+        <motion.div
           className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl p-10 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden"
-          whileHover={{ boxShadow: "0 25px 50px -12px rgba(251, 191, 36, 0.15)" }}
+          whileHover={{
+            boxShadow: "0 25px 50px -12px rgba(251, 191, 36, 0.15)",
+          }}
           transition={{ duration: 0.3 }}
         >
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5 pointer-events-none" />
-          
+
           <div className="relative z-10">
             {/* Header */}
-            <motion.div 
+            <motion.div
               className="text-center mb-8"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
+              <div className="flex justify-between w-full">
+                <Link href="/" passHref>
+                  <Button
+                    variant="outline"
+                    className="mb-8 rounded-full border-2 border-gray-200 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all font-semibold"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Kembali ke Beranda
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="w-10 h-10 rounded-xl hover:bg-gradient-to-br hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-900 transition-all duration-300 shadow-sm hover:shadow-md border border-transparent hover:border-gray-200/50 dark:hover:border-gray-700/50"
+                    >
+                      {theme === "light" && (
+                        <Sun className="h-5 w-5 transition-all text-amber-500" />
+                      )}
+                      {theme === "dark" && (
+                        <Moon className="h-5 w-5 transition-all text-indigo-400" />
+                      )}
+                      {theme === "system" && (
+                        <Laptop className="h-5 w-5 transition-all text-gray-600 dark:text-gray-400" />
+                      )}
+                      <span className="sr-only">Toggle theme</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-44 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-gray-200/50 dark:border-gray-700/50 shadow-xl"
+                  >
+                    <DropdownMenuItem
+                      onClick={() => setTheme("light")}
+                      className="cursor-pointer hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-gray-800 dark:hover:to-gray-800"
+                    >
+                      <Sun className="mr-3 h-4 w-4 text-amber-500" />
+                      <span className="font-medium">Light</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme("dark")}
+                      className="cursor-pointer hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-800"
+                    >
+                      <Moon className="mr-3 h-4 w-4 text-indigo-400" />
+                      <span className="font-medium">Dark</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme("system")}
+                      className="cursor-pointer hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 dark:hover:from-gray-800 dark:hover:to-gray-800"
+                    >
+                      <Laptop className="mr-3 h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      <span className="font-medium">System</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="relative inline-block mb-4 group">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-300" />
                 <img
@@ -159,7 +250,7 @@ export default function LoginPage() {
 
             {/* Error Message */}
             {error && (
-              <motion.div 
+              <motion.div
                 className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl backdrop-blur-sm"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -197,12 +288,16 @@ export default function LoginPage() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </motion.button>
               </InputField>
 
               <div className="flex items-center justify-between text-sm">
-                <motion.label 
+                <motion.label
                   className="flex items-center space-x-2 cursor-pointer group"
                   whileHover={{ x: 2 }}
                 >
@@ -239,7 +334,7 @@ export default function LoginPage() {
             </div>
 
             {/* Register Link */}
-            <motion.div 
+            <motion.div
               className="text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -261,14 +356,17 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Additional Info */}
-        <motion.p 
+        <motion.p
           className="text-center mt-6 text-xs text-gray-500 dark:text-gray-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
           Dengan masuk, Anda menyetujui{" "}
-          <a href="#" className="text-amber-600 dark:text-amber-400 hover:underline">
+          <a
+            href="#"
+            className="text-amber-600 dark:text-amber-400 hover:underline"
+          >
             Syarat & Ketentuan
           </a>{" "}
           kami

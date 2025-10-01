@@ -15,6 +15,7 @@ export async function fetchProvinceBySlug(slug, options = {}) {
   )}${query}`;
 
   const res = await fetch(url, { cache: "no-store" });
+  if (res.status == 404) return null;
   if (!res.ok) throw new Error("Gagal fetch data provinsi");
 
   const data = await res.json();
