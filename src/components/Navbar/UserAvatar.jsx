@@ -44,9 +44,7 @@ export default function UserAvatar() {
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuLabel>
             <div className="flex flex-col">
-              <span className="font-medium">
-                {profile?.full_name || session?.user?.email}
-              </span>
+              <span className="font-medium">{profile?.username}</span>
               <span className="text-xs text-muted-foreground">
                 {session?.user?.email}
               </span>

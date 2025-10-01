@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           const { data: profileData, error } = await supabase
             .from("profiles")
-            .select("full_name, avatar_url")
+            .select("full_name, avatar_url, username")
             .eq("id", session.user.id)
             .single();
 

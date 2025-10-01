@@ -40,7 +40,10 @@ export async function POST(req) {
 
     // 3️⃣ Upload avatar ke storage (jika ada)
     if (avatar && avatar.size > 0) {
-      avatarUrl = await uploadFileToStorage(avatar, `users/${userId}-avatar.png`);
+      avatarUrl = await uploadFileToStorage(
+        avatar,
+        `users/${userId}-avatar.png`
+      );
     }
 
     // 4️⃣ Simpan data user ke tabel users (optional, bisa juga pakai metadata)

@@ -7,7 +7,10 @@ export async function middleware(req) {
 
   // redirect kalau belum login
   if (!token) {
-    if (url.pathname.startsWith("/dashboard")) {
+    if (
+      url.pathname.startsWith("/dashboard") ||
+      url.pathname.startsWith("/settings")
+    ) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
@@ -18,7 +21,10 @@ export async function middleware(req) {
   const supabase = createServerClient({ req, res: undefined });
 
   // ambil user dari token
-  const { data: { user }, error } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
 
   if (error || !user) {
     url.pathname = "/login";
@@ -42,5 +48,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*"],
+  matcher: ["/dashboard", "/dashboard/:path*", "/settings", "/settings/:path*"],
 };
