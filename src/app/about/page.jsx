@@ -1,10 +1,18 @@
-import React from "react";
+"use client";
 
+import Navbar from "@/components/Navbar/Navbar";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card"; // Asumsi path komponen
+import { Badge } from "@/components/ui/badge"; // Asumsi path komponen
+import { Users } from "lucide-react";
+
+// Data Tim (tidak berubah)
 const teamMembers = [
   {
     name: "Muhamad Abdul Azis",
     role: "Backend Developer",
-    image: "/team/azis.jpg", // taruh di /public/team/azis.jpg
+    image: "/team/azis.jpg",
   },
   {
     name: "Ryan Gabriel",
@@ -19,47 +27,129 @@ const teamMembers = [
 ];
 
 export default function AboutPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900 flex flex-col items-center py-16 px-6">
-      {/* Logo / Title */}
-      <div className="flex flex-col items-center mb-12">
-        <img
-          src="/Logo Short.svg"
-          alt="Cultunesia Logo"
-          className="w-30 h-30 mb-6"
-        />
-        <h1 className="text-4xl font-bold text-gray-900">About Us</h1>
-        <p className="text-gray-600 mt-2 max-w-xl text-center">
-          Kami adalah tim pengembang di balik <span className="font-semibold text-yellow-600">Cultunesia</span>, 
-          berfokus untuk menghadirkan pengalaman interaktif yang elegan dan informatif.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 max-w-5xl w-full">
-        {teamMembers.map((member, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-6 flex flex-col items-center border border-yellow-100"
-          >
-            <img
-              src={member.image}
-              alt={member.name}
-              className="w-28 h-28 object-cover rounded-full border-4 border-yellow-500 shadow-md"
-            />
-            <h2 className="mt-4 text-xl font-semibold text-gray-800">
-              {member.name}
-            </h2>
-            <p className="text-yellow-600 font-medium">{member.role}</p>
-          </div>
-        ))}
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden">
+        {/* Elemen Dekoratif Latar Belakang */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-200/20 dark:bg-amber-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-yellow-200/20 dark:bg-yellow-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Footer text */}
-      <div className="mt-16 text-center text-gray-600 max-w-lg">
-        <p>
-          Dengan dedikasi dan semangat kolaborasi, tim kami terus berusaha
-          menghadirkan inovasi terbaik untuk pengembangan platform ini.
-        </p>
+      <div className="container mx-auto px-6 py-24 sm:py-32 relative z-10">
+        <motion.div
+          className="text-center"
+          initial={mounted ? "hidden" : false}
+          animate="visible"
+          variants={containerVariants}
+        >
+          {/* Hero Section */}
+          <motion.div variants={itemVariants}>
+            <Badge className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 dark:from-amber-500/20 dark:to-yellow-500/20 rounded-full mb-6 border border-amber-400/30 dark:border-amber-600/30 text-amber-700 dark:text-amber-400 font-semibold shadow-lg backdrop-blur-sm">
+              <Users className="w-5 h-5" />
+              Tim Di Balik Layar
+            </Badge>
+          </motion.div>
+
+          <motion.h1
+            variants={itemVariants}
+            className="text-5xl md:text-7xl font-bold mb-6 tracking-tight"
+          >
+            <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-amber-100 dark:to-white bg-clip-text text-transparent">
+              Tentang Kami
+            </span>
+          </motion.h1>
+
+          <motion.p
+            variants={itemVariants}
+            className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed"
+          >
+            Kami adalah tim pengembang di balik{" "}
+            <span className="font-semibold text-amber-600 dark:text-amber-400">
+              Cultunesia
+            </span>
+            , berfokus untuk menghadirkan pengalaman interaktif yang elegan dan
+            informatif.
+          </motion.p>
+        </motion.div>
+
+        {/* Grid Tim */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-20"
+          initial={mounted ? "hidden" : false}
+          animate="visible"
+          variants={containerVariants}
+        >
+          {teamMembers.map((member) => (
+            <motion.div
+              key={member.name}
+              variants={itemVariants}
+              whileHover={{ y: -10, transition: { duration: 0.3 } }}
+              className="group h-full"
+            >
+              <Card className="h-full text-center overflow-hidden border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-amber-500/10 rounded-2xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 hover:border-amber-400/50 dark:hover:border-amber-600/50">
+                <CardContent className="p-8 flex flex-col items-center">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-32 h-32 object-cover rounded-full border-4 border-white dark:border-gray-800 shadow-lg mb-6 group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    {member.name}
+                  </h2>
+                  <p className="text-amber-600 dark:text-amber-400 font-medium">
+                    {member.role}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Footer Text */}
+        <motion.div
+          className="mt-20 text-center text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
+          initial={mounted ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <p>
+            Dengan dedikasi dan semangat kolaborasi, tim kami terus berusaha
+            menghadirkan inovasi terbaik untuk pengembangan platform ini.
+          </p>
+        </motion.div>
       </div>
     </div>
+  </>
   );
 }

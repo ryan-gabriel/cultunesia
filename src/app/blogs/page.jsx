@@ -1,4 +1,6 @@
 // src/app/blogs/page.jsx
+
+import Navbar from "@/components/Navbar/Navbar";
 import BlogsList from "@/components/page/blogs/BlogsList";
 import { fetchBlogs } from "@/utils/serverBlogs";
 
@@ -17,5 +19,10 @@ export default async function Page(context) {
     console.error("Fetch blog error:", err.message);
   }
 
-  return <BlogsList data={initialData} page={page} limit={limit} />;
+  return (
+    <>
+      <Navbar />
+      <BlogsList data={initialData} page={page} limit={limit} />
+    </>
+  );
 }
