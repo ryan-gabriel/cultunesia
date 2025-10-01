@@ -14,7 +14,7 @@ export async function POST(req) {
 
     const supabase = createServerClient();
 
-    // Login menggunakan Supabase Auth
+    // 🔑 Login pakai Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -24,7 +24,7 @@ export async function POST(req) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Pastikan email sudah diverifikasi
+    // 🚨 pastikan email sudah terverifikasi
     if (!data.user.email_confirmed_at) {
       return NextResponse.json(
         { error: "Silakan verifikasi email sebelum login" },
@@ -32,11 +32,27 @@ export async function POST(req) {
       );
     }
 
-    const { access_token, refresh_token } = data.session; // ambil token dari session
+    const { access_token, refresh_token } = data.session;
+
+    // 🔍 Ambil role dari profiles
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id) // id user dari auth
+      .single();
+
+    if (profileError) {
+      console.error(profileError);
+      return NextResponse.json(
+        { error: "Gagal mengambil role user" },
+        { status: 500 }
+      );
+    }
 
     const response = NextResponse.json({
       message: "Login berhasil",
       user: data.user,
+      role: profile?.role || null, // role ikut dikirim
       access_token,
       refresh_token,
     });
