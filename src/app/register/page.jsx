@@ -2,6 +2,68 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { User, AtSign, Mail, Lock, Eye, EyeOff, Upload, Sparkles, UserPlus, Image } from "lucide-react";
+
+// --- Reusable Form Components ---
+
+const InputField = ({ name, type, value, onChange, placeholder, icon: Icon, children }) => (
+  <motion.div 
+    className="space-y-2"
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+  >
+    <label htmlFor={name} className="block text-gray-700 dark:text-gray-300 text-sm font-semibold tracking-wide">
+      {name === "fullName" && "Nama Lengkap"}
+      {name === "username" && "Username"}
+      {name === "email" && "Alamat Email"}
+      {name === "password" && "Password"}
+      {name === "confirmPassword" && "Konfirmasi Password"}
+    </label>
+    <div className="relative group">
+      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <Icon className="w-5 h-5 text-gray-400 group-focus-within:text-amber-500 transition-colors duration-300" />
+      </div>
+      <input
+        id={name}
+        type={type}
+        name={name}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required
+        className="w-full pl-12 pr-12 py-3.5 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all duration-300 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
+      />
+      {children}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-yellow-500/0 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
+    </div>
+  </motion.div>
+);
+
+const SubmitButton = ({ loading }) => (
+  <motion.button
+    type="submit"
+    disabled={loading}
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    className="w-full py-4 px-6 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 border border-amber-400/20"
+  >
+    {loading ? (
+      <>
+        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+        <span>Mendaftar...</span>
+      </>
+    ) : (
+      <>
+        <UserPlus className="w-5 h-5 mr-2" />
+        <span>Daftar Sekarang</span>
+      </>
+    )}
+  </motion.button>
+);
+
+// --- Main Page Component ---
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -15,6 +77,8 @@ export default function RegisterPage() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const router = useRouter();
 
@@ -58,8 +122,7 @@ export default function RegisterPage() {
         setError(result.error);
       } else {
         console.log("User registered:", result);
-        router.replace('/login')
-        // redirect ke dashboard atau tampilkan notifikasi sukses
+        router.replace('/login');
       }
     } catch (err) {
       setError(err.message);
@@ -69,123 +132,250 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-lg dark:bg-gray-900">
-      <h2 className="text-3xl font-bold mb-6 text-center text-primary-gold">
-        Create Account
-      </h2>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-200/20 dark:bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-yellow-200/20 dark:bg-yellow-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-amber-100/10 to-yellow-100/10 dark:from-amber-500/5 dark:to-yellow-500/5 rounded-full blur-3xl" />
+      </div>
 
-      {error && (
-        <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            name="fullName"
-            placeholder="John Doe"
-            value={form.fullName}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Username
-          </label>
-          <input
-            type="text"
-            name="username"
-            placeholder="johndoe123"
-            value={form.username}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            name="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            name="password"
-            placeholder="********"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="********"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-gold focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Avatar (Optional)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-600 dark:text-gray-300 
-            file:mr-3 file:py-2 file:px-4 
-            file:rounded-lg file:border-0 
-            file:text-sm file:font-semibold 
-            file:bg-primary-gold file:text-white 
-            hover:file:bg-yellow-600"
-          />
-          {preview && (
-            <img
-              src={preview}
-              alt="Preview"
-              className="mt-3 w-20 h-20 object-cover rounded-full mx-auto border"
-            />
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-primary-gold text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition"
+      <motion.div 
+        className="w-full max-w-2xl relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <motion.div 
+          className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl p-10 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden"
+          whileHover={{ boxShadow: "0 25px 50px -12px rgba(251, 191, 36, 0.15)" }}
+          transition={{ duration: 0.3 }}
         >
-          {loading ? "Registering..." : "Register"}
-        </button>
-      </form>
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5 pointer-events-none" />
+          
+          <div className="relative z-10">
+            {/* Header */}
+            <motion.div 
+              className="text-center mb-8"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="relative inline-block mb-4 group">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-300" />
+                <img
+                  src="/Logo Short.svg"
+                  alt="Cultunesia Logo"
+                  className="w-20 h-20 mx-auto relative z-10 drop-shadow-lg"
+                />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-2">
+                Bergabung dengan Cultunesia
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                Mulai perjalanan budaya Anda bersama kami
+              </p>
+            </motion.div>
+
+            {/* Error Message */}
+            {error && (
+              <motion.div 
+                className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl backdrop-blur-sm"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <p className="text-red-700 dark:text-red-400 text-sm text-center font-medium">
+                  {error}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Avatar Upload */}
+              <motion.div
+                className="flex flex-col items-center mb-6"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full border-4 border-amber-500/20 dark:border-amber-500/30 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center group-hover:border-amber-500/40 transition-all duration-300">
+                    {preview ? (
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-12 h-12 text-gray-400" />
+                    )}
+                  </div>
+                  <label 
+                    htmlFor="avatar-upload"
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border-2 border-white dark:border-gray-900"
+                  >
+                    <Image className="w-4 h-4 text-white" />
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                  Upload foto profil (opsional)
+                </p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <InputField
+                  name="fullName"
+                  type="text"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  placeholder="John Doe"
+                  icon={User}
+                />
+
+                <InputField
+                  name="username"
+                  type="text"
+                  value={form.username}
+                  onChange={handleChange}
+                  placeholder="johndoe123"
+                  icon={AtSign}
+                />
+              </div>
+
+              <InputField
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                icon={Mail}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <InputField
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Min. 8 karakter"
+                  icon={Lock}
+                >
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </motion.button>
+                </InputField>
+
+                <InputField
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Ulangi password"
+                  icon={Lock}
+                >
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-300"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </motion.button>
+                </InputField>
+              </div>
+
+              <motion.div
+                className="flex items-start space-x-3 pt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <input
+                  type="checkbox"
+                  required
+                  className="w-4 h-4 mt-1 text-amber-600 border-gray-300 dark:border-gray-600 rounded focus:ring-amber-500 focus:ring-offset-0 cursor-pointer transition-all"
+                />
+                <label className="text-sm text-gray-600 dark:text-gray-400">
+                  Saya menyetujui{" "}
+                  <a href="#" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold">
+                    Syarat & Ketentuan
+                  </a>{" "}
+                  dan{" "}
+                  <a href="#" className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-semibold">
+                    Kebijakan Privasi
+                  </a>
+                </label>
+              </motion.div>
+
+              <SubmitButton loading={loading} />
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white/80 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 backdrop-blur-sm">
+                  atau
+                </span>
+              </div>
+            </div>
+
+            {/* Login Link */}
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Sudah Punya Akun?{" "}
+                <motion.a
+                  href="/login"
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold transition-colors inline-flex items-center gap-1 group"
+                  whileHover={{ x: 2 }}
+                >
+                  Masuk di sini
+                  <Sparkles className="w-3 h-3 group-hover:rotate-12 transition-transform" />
+                </motion.a>
+              </p>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Additional Info */}
+        <motion.p 
+          className="text-center mt-6 text-xs text-gray-500 dark:text-gray-500"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          Dengan mendaftar, Anda menyetujui{" "}
+          <a href="#" className="text-amber-600 dark:text-amber-400 hover:underline">
+            Syarat Layanan
+          </a>{" "}
+          kami
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Navbar from "@/components/Navbar/Navbar";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -50,19 +51,18 @@ export default function Home() {
   const isDragging = useRef(false);
   const startPos = useRef({ x: 0, y: 0 });
 
-  // Check if screen is mobile/tablet and set initial scale
+  // Periksa ukuran layar saat komponen dimuat
   useEffect(() => {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
 
-      // Auto-fit map on mobile on initial load
       if (mobile) {
-        // Default zoom 350% di mobile
+        // Atur zoom dan posisi default untuk mobile
         setScale(3.5);
         setPosition({ x: 0, y: 1000 });
       } else {
-        // Default zoom 100% di desktop
+        // Atur zoom dan posisi default untuk desktop
         setScale(1);
         setPosition({ x: 0, y: 0 });
       }
@@ -71,57 +71,59 @@ export default function Home() {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
-  }, []); // <-- MODIFIED: Dependency array is now empty to run only once on mount
+  }, []);
 
   const handleZoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev * 1.3, isMobile ? 10 : 10));
-  }, [isMobile]);
+    setScale((prev) => Math.min(prev * 1.3, 10));
+  }, []);
 
-  // --- MODIFIED handleZoomOut ---
   const handleZoomOut = useCallback(() => {
-    // For desktop, minimum scale is 1 (100%). For mobile, allow smaller zoom.
     const minScale = isMobile ? 0.2 : 1;
     setScale((prev) => Math.max(prev / 1.3, minScale));
-  }, [isMobile]); // <-- MODIFIED: Added isMobile dependency
+  }, [isMobile]);
 
   const handleReset = useCallback(() => {
     if (isMobile) {
-      // Smart reset for mobile - fit to screen
-      const containerWidth = window.innerWidth - 32;
-      const mapWidth = 1875.5;
-      const optimalScale = (containerWidth / mapWidth) * 1.1;
-      setScale(optimalScale);
+        // Reset cerdas untuk mobile
+        const containerWidth = window.innerWidth - 32;
+        const mapWidth = 1875.5;
+        const optimalScale = (containerWidth / mapWidth) * 1.1;
+        setScale(optimalScale);
+        setPosition({ x: 0, y: -200 });
     } else {
-      // For desktop, reset to 100%
-      setScale(1);
+        // Reset standar untuk desktop
+        setScale(1);
+        setPosition({ x: 0, y: 0 });
     }
-    setPosition({ x: 0, y: 0 });
-  }, [isMobile]);
+}, [isMobile]);
+
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(!isFullscreen);
-    if (!isFullscreen && isMobile) {
-      // On mobile fullscreen, optimize scale
-      setTimeout(() => {
-        const containerWidth = window.innerWidth;
-        const containerHeight = window.innerHeight;
-        const mapWidth = 1875.5;
-        const mapHeight = 860.859;
-
-        const scaleX = containerWidth / mapWidth;
-        const scaleY = containerHeight / mapHeight;
-        const optimalScale = Math.min(scaleX, scaleY) * 0.9;
-
-        setScale(optimalScale);
-        setPosition({ x: 0, y: 0 });
-      }, 100);
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+        setIsFullscreen(true);
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        setIsFullscreen(false);
     }
-  }, [isFullscreen, isMobile]);
+  }, []);
 
-  // --- MODIFIED handleWheel ---
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+
   const handleWheel = useCallback(
     (e) => {
-      if (isMobile) return; // Disable wheel zoom on mobile
+      if (isMobile) return;
 
       e.preventDefault();
       const rect = mapRef.current?.getBoundingClientRect();
@@ -130,13 +132,9 @@ export default function Home() {
       const zoomIntensity = 0.1;
       const wheel = e.deltaY < 0 ? 1 : -1;
       const zoom = Math.exp(wheel * zoomIntensity);
+      
+      const newScale = Math.min(Math.max(scale * zoom, 1), 10);
 
-      const maxScale = isMobile ? 10 : 10;
-      // For desktop, minimum scale is 1 (100%)
-      const minScale = 1;
-      const newScale = Math.min(Math.max(scale * zoom, minScale), maxScale);
-
-      // Calculate zoom center point
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
@@ -151,9 +149,7 @@ export default function Home() {
   );
 
   const handleMouseDown = (e) => {
-    // Jangan aktifkan dragging di desktop kalau scale == 1
-    if (!isMobile && scale === 1) return;
-
+    if (!isMobile && scale <= 1) return;
     if (e.target.closest('g[class*="province"]')) return;
 
     isDragging.current = true;
@@ -168,9 +164,6 @@ export default function Home() {
   };
 
   const handleTouchStart = (e) => {
-    // Cegah geser kalau desktop & zoom = 1
-    if (!isMobile && scale === 1) return;
-
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       isDragging.current = true;
@@ -181,16 +174,16 @@ export default function Home() {
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging.current) return;
     e.preventDefault();
     setPosition({
       x: e.clientX - startPos.current.x,
       y: e.clientY - startPos.current.y,
     });
-  };
+  }, []);
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = useCallback((e) => {
     if (!isDragging.current || e.touches.length !== 1) return;
     e.preventDefault();
     const touch = e.touches[0];
@@ -198,16 +191,16 @@ export default function Home() {
       x: touch.clientX - startPos.current.x,
       y: touch.clientY - startPos.current.y,
     });
-  };
+  }, []);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     isDragging.current = false;
     if (mapRef.current) {
       mapRef.current.style.cursor = "grab";
     }
-  };
+  }, []);
 
-  // Keyboard navigation (desktop only)
+  // Keyboard navigation
   useEffect(() => {
     if (isMobile) return;
 
@@ -237,6 +230,9 @@ export default function Home() {
         case "Escape":
           setShowInfo(false);
           setControlsExpanded(false);
+          if (document.fullscreenElement) {
+              document.exitFullscreen();
+          }
           break;
       }
     };
@@ -245,6 +241,7 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleReset, handleZoomIn, handleZoomOut, isMobile, toggleFullscreen]);
 
+  // Efek untuk event listener scroll mouse
   useEffect(() => {
     const mapElement = mapRef.current;
     if (mapElement && !isMobile) {
@@ -255,7 +252,7 @@ export default function Home() {
 
   const zoomLevel = Math.round(scale * 100);
 
-  // Mobile Controls Component
+  // Komponen Kontrol Mobile
   const MobileControls = () => (
     <div className="fixed bottom-4 right-4 z-30">
       <motion.div
@@ -263,7 +260,6 @@ export default function Home() {
         animate={{ height: controlsExpanded ? "auto" : "56px" }}
         className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl border overflow-hidden"
       >
-        {/* Toggle Button */}
         <button
           onClick={() => setControlsExpanded(!controlsExpanded)}
           className="w-full h-14 px-4 flex items-center justify-between text-left"
@@ -280,8 +276,6 @@ export default function Home() {
             <ChevronUp className="w-5 h-5" />
           )}
         </button>
-
-        {/* Expanded Controls */}
         <AnimatePresence>
           {controlsExpanded && (
             <motion.div
@@ -290,7 +284,6 @@ export default function Home() {
               exit={{ opacity: 0 }}
               className="p-4 pt-0 space-y-3"
             >
-              {/* Zoom Controls */}
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   size="sm"
@@ -314,15 +307,13 @@ export default function Home() {
                 <Button
                   size="sm"
                   onClick={handleZoomIn}
-                  disabled={scale >= 5}
+                  disabled={scale >= 10}
                   className="h-12 bg-primary-gold hover:bg-primary-gold/90 text-black flex flex-col gap-1 text-xs"
                 >
                   <ZoomIn className="w-4 h-4" />
                   <span>Besar</span>
                 </Button>
               </div>
-
-              {/* Fullscreen */}
               <Button
                 onClick={toggleFullscreen}
                 variant="outline"
@@ -337,8 +328,6 @@ export default function Home() {
                   {isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
                 </span>
               </Button>
-
-              {/* Zoom Level */}
               <div className="text-center">
                 <Badge variant="secondary" className="px-3 py-1">
                   Zoom: {zoomLevel}%
@@ -351,7 +340,7 @@ export default function Home() {
     </div>
   );
 
-  // Desktop Controls Component
+  // Komponen Kontrol Desktop
   const DesktopControls = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -362,12 +351,11 @@ export default function Home() {
       <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-lg">
         <CardContent className="p-3">
           <div className="flex flex-col gap-2">
-            {/* Zoom Controls */}
             <div className="flex gap-1">
               <Button
                 size="sm"
                 onClick={handleZoomIn}
-                disabled={scale >= 5}
+                disabled={scale >= 10}
                 className="bg-primary-gold hover:bg-primary-gold/90 text-black w-10 h-10 p-0"
               >
                 <ZoomIn className="w-4 h-4" />
@@ -375,15 +363,12 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={handleZoomOut}
-                // --- MODIFIED disabled condition ---
                 disabled={scale <= 1}
                 className="bg-primary-gold hover:bg-primary-gold/90 text-black w-10 h-10 p-0"
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
             </div>
-
-            {/* Reset & Fullscreen */}
             <div className="flex gap-1">
               <Button
                 size="sm"
@@ -406,8 +391,6 @@ export default function Home() {
                 )}
               </Button>
             </div>
-
-            {/* Zoom Level */}
             <div className="px-2 py-1">
               <Badge
                 variant="secondary"
@@ -423,208 +406,104 @@ export default function Home() {
   );
 
   return (
-    <TooltipProvider>
-      <div
-        className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 transition-all duration-500 ${
-          isFullscreen ? "fixed inset-0 z-50" : ""
-        }`}
-      >
-        {/* Header - Hidden on mobile fullscreen */}
-        {!(isMobile && isFullscreen) && (
-          <motion.header
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative z-30 bg-white/80 backdrop-blur-lg border-b border-gray-200/50"
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-14 md:h-16">
-                {/* Logo */}
-                <motion.div
-                  className="flex items-center gap-2 md:gap-3"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-primary-gold rounded-xl flex items-center justify-center">
-                    <MapPin className="w-4 h-4 md:w-6 md:h-6 text-black" />
-                  </div>
-                  <div>
-                    <h1 className="text-lg md:text-xl font-bold text-gray-900">
-                      Peta Indonesia
-                    </h1>
-                    <p className="text-xs text-gray-500 hidden sm:block">
-                      Jelajahi Nusantara
-                    </p>
-                  </div>
-                </motion.div>
-
-                {/* Desktop Navigation */}
-                <nav className="hidden lg:flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-primary-gold"
-                  >
-                    <Globe className="w-4 h-4 mr-2" />
-                    Provinsi
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600 hover:text-primary-gold"
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    Cari
-                  </Button>
-                </nav>
-
-                {/* Mobile/Tablet Menu */}
-                <div className="lg:hidden">
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Menu className="w-5 h-5" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent>
-                      <SheetHeader>
-                        <SheetTitle>Menu</SheetTitle>
-                      </SheetHeader>
-                      <div className="mt-6 space-y-3">
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start"
-                        >
-                          <Globe className="w-4 h-4 mr-3" />
-                          Provinsi
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start"
-                        >
-                          <Search className="w-4 h-4 mr-3" />
-                          Cari
-                        </Button>
-                        <div className="pt-4 border-t">
-                          <h3 className="text-sm font-medium mb-3 text-gray-900">
-                            Bantuan
-                          </h3>
-                          <div className="space-y-2 text-sm text-gray-600">
-                            <div>• Seret untuk menggeser peta</div>
-                            <div>
-                              •{" "}
-                              {isMobile
-                                ? "Pinch untuk zoom"
-                                : "Scroll untuk zoom"}
-                            </div>
-                            <div>• Klik provinsi untuk detail</div>
-                          </div>
-                        </div>
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </div>
-              </div>
-            </div>
-          </motion.header>
-        )}
-
-        {/* Main Content */}
-        <main
-          ref={containerRef}
-          className={`relative transition-all duration-500 ${
-            isFullscreen
-              ? "h-screen"
-              : isMobile
-              ? "h-[calc(100vh-3.5rem)]"
-              : "h-[calc(100vh-4rem)]"
+    <>
+      <Navbar />
+      <TooltipProvider>
+        <div
+          className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 transition-all duration-500 ${
+            isFullscreen ? "fixed inset-0 z-50 bg-white" : ""
           }`}
         >
-          {/* Controls */}
-          {isMobile ? <MobileControls /> : <DesktopControls />}
-
-          {/* Status Bar - Desktop only */}
-          {!isMobile && !isFullscreen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="absolute bottom-6 left-6 z-20"
-            >
-              <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-lg">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Navigation className="w-4 h-4" />
-                      <span>Zoom: {zoomLevel}%</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Map Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            ref={mapRef}
-            className="h-full w-full bg-gradient-to-br from-blue-50/30 to-slate-50/30 cursor-grab active:cursor-grabbing overflow-hidden relative touch-pan-x touch-pan-y"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleMouseUp}
-            role="img"
-            aria-label="Interactive map of Indonesia provinces"
-            tabIndex={0}
+          {/* Bagian Header yang berisi "Peta Indonesia" sudah dihapus dari sini */}
+          
+          <main
+            ref={containerRef}
+            // MODIFIKASI: Mengubah tinggi untuk memperhitungkan ketiadaan header
+            className={`relative transition-all duration-500 ${
+              isFullscreen
+                ? "h-screen"
+                : "h-screen" // <-- Sekarang selalu h-screen jika tidak fullscreen
+            }`}
           >
-            {/* Grid Pattern Overlay - Hidden on mobile for performance */}
-            {!isMobile && (
-              <div className="absolute inset-0 opacity-5">
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: `
-                    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.1) 1px, transparent 0)
-                  `,
-                    backgroundSize: "20px 20px",
-                  }}
-                />
-              </div>
+            {isMobile ? <MobileControls /> : <DesktopControls />}
+            {!isMobile && !isFullscreen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="absolute bottom-6 left-6 z-20"
+                >
+                  <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-lg">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Navigation className="w-4 h-4" />
+                          <span>Zoom: {zoomLevel}%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
             )}
 
             <motion.div
-              className="w-full h-full transition-transform duration-200 ease-out will-change-transform"
-              style={{
-                transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
-                transformOrigin: "center center",
-              }}
-              animate={{ scale, x: position.x, y: position.y }}
-              transition={{ type: "tween", duration: 0.2 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              ref={mapRef}
+              className="h-full w-full bg-gradient-to-br from-blue-50/30 to-slate-50/30 cursor-grab active:cursor-grabbing overflow-hidden relative touch-pan-x touch-pan-y"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
+              role="img"
+              aria-label="Peta interaktif provinsi Indonesia"
+              tabIndex={0}
             >
-              <MapSvg />
+              {!isMobile && (
+                <div className="absolute inset-0 opacity-5">
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundImage: `
+                      radial-gradient(circle at 1px 1px, rgba(0,0,0,0.1) 1px, transparent 0)
+                    `,
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                </div>
+              )}
+              <motion.div
+                className="w-full h-full"
+                style={{
+                  transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
+                  transformOrigin: "center center",
+                }}
+                animate={{ scale, x: position.x, y: position.y }}
+                transition={{ type: "tween", duration: 0.2, ease: "linear" }}
+              >
+                <MapSvg />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                transition={{ delay: 1, duration: 0.5 }}
+                className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center pointer-events-none"
+              >
+                <div className="text-center px-4">
+                  <div className="w-8 h-8 border-4 border-primary-gold border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
+                  <p className="text-sm text-gray-600">
+                    Memuat peta Indonesia...
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
-
-            {/* Loading Overlay */}
-            <motion.div
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 0 }}
-              transition={{ delay: 1, duration: 0.5 }}
-              className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center pointer-events-none"
-            >
-              <div className="text-center px-4">
-                <div className="w-8 h-8 border-4 border-primary-gold border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
-                <p className="text-sm text-gray-600">
-                  Memuat peta Indonesia...
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        </main>
-      </div>
-    </TooltipProvider>
+          </main>
+        </div>
+      </TooltipProvider>
+    </>
   );
 }
