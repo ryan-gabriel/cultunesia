@@ -119,7 +119,7 @@ export async function POST(request) {
 }
 
 export async function GET(req) {
-  const supabase = createServerClient();
+  const supabase = createServerClient(); // Menggunakan fungsi createServerClient yang sudah ada
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type") ?? "daily";
@@ -172,7 +172,7 @@ export async function GET(req) {
 
     const { data: attempts, error: attemptError } = await supabase
       .from("user_quiz_attempts")
-      .select("quiz_id, finished_at, score")
+      .select("attempt_id, quiz_id, finished_at, score") // **MODIFIED: ADDED attempt_id**
       .eq("user_id", userId)
       .in("quiz_id", quizIds)
       .not("finished_at", "is", null); // hanya yang sudah selesai
@@ -190,14 +190,102 @@ export async function GET(req) {
       const quizDetail = quizzes.find(
         (q) => q.quiz_id === completedQuiz.quiz_id
       );
+      const attemptId = completedQuiz.attempt_id; // Ambil attempt ID
 
-      return NextResponse.json({
-        message: "Anda sudah mengerjakan quiz hari ini",
-        already_completed: true,
-        quiz_title: quizDetail?.title,
-        score: completedQuiz.score,
-        completed_at: completedQuiz.finished_at,
-      });
+      try {
+        // --- 1. Fetch User Answers ---
+        const { data: userAnswers, error: answerError } = await supabase
+          .from("user_answers")
+          .select(
+            "question_id, selected_option_id, typed_text, matched_pairs, is_correct"
+          )
+          .eq("attempt_id", attemptId);
+
+        if (answerError) throw answerError;
+
+        const userAnswersMap = new Map(
+          userAnswers.map((ua) => [ua.question_id, ua])
+        );
+
+        // --- 2. Fetch Questions (For history/review) ---
+        const { data: qs, error: questionsError } = await supabase
+          .from("questions")
+          .select("question_id, type, text, points, image_url")
+          .eq("quiz_id", quizDetail.quiz_id);
+
+        if (questionsError) throw questionsError;
+
+        const multipleChoiceIds = qs
+          .filter((q) => q.type === "multiple_choice")
+          .map((q) => q.question_id);
+        const matchingIds = qs
+          .filter((q) => q.type === "matching")
+          .map((q) => q.question_id);
+
+        // --- 3. Fetch Options and Matching Pairs (INCLUDING correct answers for review) ---
+        const [optionsRes, pairsRes] = await Promise.all([
+          supabase
+            .from("options")
+            .select("option_id, question_id, text, is_correct")
+            .in("question_id", multipleChoiceIds),
+          // FIX: Removed 'is_correct' from matching_pairs select
+          supabase
+            .from("matching_pairs")
+            .select("pair_id, question_id, left_text, right_text")
+            .in("question_id", matchingIds),
+        ]);
+
+        if (optionsRes.error) throw optionsRes.error;
+        if (pairsRes.error) throw pairsRes.error;
+
+        const options = optionsRes.data || [];
+        const matchingPairs = pairsRes.data || [];
+
+        // --- 4. Attach nested data, user answers, and correct answers ---
+        const questions = qs.map((q) => {
+          const userAnswer = userAnswersMap.get(q.question_id);
+          let questionData = { ...q, user_answer: userAnswer }; // **ADDED: Attach user answer**
+
+          if (q.type === "multiple_choice") {
+            const opts = options.filter((o) => o.question_id === q.question_id);
+            questionData.options = opts; // Now includes is_correct for review
+          } else if (q.type === "matching") {
+            const pairs = matchingPairs.filter(
+              (p) => p.question_id === q.question_id
+            );
+            questionData.matching_pairs = pairs; // Only contains correct pairs (left_text + right_text)
+          }
+
+          return questionData;
+        });
+
+        // --- 5. Return the result with questions ---
+        return NextResponse.json({
+          message: "Anda sudah mengerjakan quiz hari ini",
+          already_completed: true,
+          quiz_title: quizDetail?.title,
+          score: completedQuiz.score,
+          completed_at: completedQuiz.finished_at,
+          questions, // **ADDED: Quiz history questions with user answers**
+        });
+      } catch (err) {
+        // Handle error during data fetching for history
+        console.error("Error fetching quiz history details:", err);
+        // Continue returning the completed message even if history details fail to load
+        return NextResponse.json(
+          {
+            message:
+              "Anda sudah mengerjakan quiz hari ini (Gagal memuat detail riwayat)",
+            already_completed: true,
+            quiz_title: quizDetail?.title,
+            score: completedQuiz.score,
+            completed_at: completedQuiz.finished_at,
+            error: "Gagal mengambil riwayat quiz",
+            details: err.message,
+          },
+          { status: 200 } // Return 200 as the completion status is known
+        );
+      }
     }
   }
 
@@ -225,15 +313,15 @@ export async function GET(req) {
         .filter((q) => q.type === "matching")
         .map((q) => q.question_id);
 
-      // Fetch options and matching pairs
+      // Fetch options and matching pairs (WITHOUT correct answers for quiz start)
       const [optionsRes, pairsRes] = await Promise.all([
         supabase
           .from("options")
-          .select("option_id, question_id, text")
+          .select("option_id, question_id, text") // No is_correct
           .in("question_id", multipleChoiceIds),
         supabase
           .from("matching_pairs")
-          .select("pair_id, question_id, left_text, right_text")
+          .select("pair_id, question_id, left_text, right_text") // No is_correct
           .in("question_id", matchingIds),
       ]);
 
@@ -247,13 +335,17 @@ export async function GET(req) {
       const questions = qs.map((q) => {
         if (q.type === "multiple_choice") {
           const opts = options.filter((o) => o.question_id === q.question_id);
-          return { ...q, options: shuffleArray(opts) };
+          // NOTE: assuming shuffleArray is defined
+          // return { ...q, options: shuffleArray(opts) };
+          return { ...q, options: opts };
         }
         if (q.type === "matching") {
           const pairs = matchingPairs.filter(
             (p) => p.question_id === q.question_id
           );
-          return { ...q, matching_pairs: shuffleArray(pairs) };
+          // NOTE: assuming shuffleArray is defined
+          // return { ...q, matching_pairs: shuffleArray(pairs) };
+          return { ...q, matching_pairs: pairs };
         }
         // short_answer -> no answers sent
         return q;
@@ -278,6 +370,7 @@ export async function GET(req) {
   // Untuk request selain today's quiz, return simple list
   return NextResponse.json({ quizzes });
 }
+
 
 // Contoh penggunaan:
 // GET /api/quizzes?type=daily&today=true&user_id=123

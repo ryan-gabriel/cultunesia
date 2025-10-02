@@ -67,8 +67,16 @@ export async function fetchQuestionById(quizId, questionId) {
 
 export async function fetchTodayQuiz() {
   // 1. ambil user_id dari Supabase Auth
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("User belum login");
+  let data;
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    data = userData;
+  } catch {
+    return null;
+  }
+  if (!data || !data.user) {
+    return null;
+  }
   const userId = data.user.id;
 
   // 2. bangun query params

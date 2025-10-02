@@ -15,10 +15,9 @@ export async function POST(req) {
       );
     }
 
-    // Check if user already has a started attempt for this quiz
+    // --- Handle attempt ---
     let attemptId = null;
     if (user_id) {
-      // First, check if there's an existing unfinished attempt
       const { data: existingAttempt, error: attemptError } = await supabase
         .from("user_quiz_attempts")
         .select("attempt_id")
@@ -27,14 +26,12 @@ export async function POST(req) {
         .is("finished_at", null)
         .single();
 
-      if (attemptError && attemptError.code !== 'PGRST116') {
-        // PGRST116 is "not found" error, which is okay
+      if (attemptError && attemptError.code !== "PGRST116") {
         throw attemptError;
       }
 
       attemptId = existingAttempt?.attempt_id;
 
-      // If no existing attempt, create a new one
       if (!attemptId) {
         const { data: newAttempt, error: createError } = await supabase
           .from("user_quiz_attempts")
@@ -42,7 +39,7 @@ export async function POST(req) {
             user_id,
             quiz_id,
             started_at: new Date().toISOString(),
-            score: 0
+            score: 0,
           })
           .select("attempt_id")
           .single();
@@ -52,7 +49,7 @@ export async function POST(req) {
       }
     }
 
-    // Fetch all questions for this quiz
+    // --- Ambil pertanyaan ---
     const { data: questions, error: qError } = await supabase
       .from("questions")
       .select("*")
@@ -64,10 +61,10 @@ export async function POST(req) {
     let earnedPoints = 0;
 
     const results = [];
+    const userAnswersToInsert = []; // kumpulin semua jawaban user di sini
 
     for (const q of questions) {
       totalPoints += q.points || 1;
-
       const userAnswer = answers.find((a) => a.question_id === q.question_id);
 
       let correctAnswer = null;
@@ -84,8 +81,8 @@ export async function POST(req) {
         continue;
       }
 
+      // --- Multiple Choice ---
       if (q.type === "multiple_choice") {
-        // Fetch correct option
         const { data: options } = await supabase
           .from("options")
           .select("option_id, text, is_correct")
@@ -97,6 +94,15 @@ export async function POST(req) {
 
         if (isCorrect) earnedPoints += q.points || 1;
 
+        if (attemptId) {
+          userAnswersToInsert.push({
+            attempt_id: attemptId,
+            question_id: q.question_id,
+            selected_option_id: userAnswer.answer,
+            is_correct: isCorrect,
+          });
+        }
+
         results.push({
           question_id: q.question_id,
           type: q.type,
@@ -105,11 +111,12 @@ export async function POST(req) {
           options: options.map((o) => ({
             option_id: o.option_id,
             text: o.text,
-          })), // send options to frontend
+          })),
           isCorrect,
         });
       }
 
+      // --- Short Answer ---
       if (q.type === "short_answer") {
         const { data: keys } = await supabase
           .from("answer_keys")
@@ -120,6 +127,15 @@ export async function POST(req) {
         isCorrect = correctTexts.includes(userAnswer.answer?.trim());
         if (isCorrect) earnedPoints += q.points || 1;
 
+        if (attemptId) {
+          userAnswersToInsert.push({
+            attempt_id: attemptId,
+            question_id: q.question_id,
+            typed_text: userAnswer.answer,
+            is_correct: isCorrect,
+          });
+        }
+
         results.push({
           question_id: q.question_id,
           type: q.type,
@@ -129,6 +145,7 @@ export async function POST(req) {
         });
       }
 
+      // --- Matching ---
       if (q.type === "matching") {
         const { data: pairs } = await supabase
           .from("matching_pairs")
@@ -136,9 +153,8 @@ export async function POST(req) {
           .eq("question_id", q.question_id);
 
         const answerPairs = userAnswer.answer || [];
-
-        // Check correctness per pair
         let matchingCorrect = 0;
+
         const pairResults = pairs.map((p) => {
           const userPair = answerPairs.find((a) => a.pair_id === p.pair_id);
           const isPairCorrect = userPair?.selected === p.right_text;
@@ -152,9 +168,17 @@ export async function POST(req) {
           };
         });
 
-        // Partial score: fraction of correct pairs
         const pairScore = (matchingCorrect / pairs.length) * (q.points || 1);
         earnedPoints += pairScore;
+
+        if (attemptId) {
+          userAnswersToInsert.push({
+            attempt_id: attemptId,
+            question_id: q.question_id,
+            matched_pairs: answerPairs,
+            is_correct: matchingCorrect === pairs.length,
+          });
+        }
 
         results.push({
           question_id: q.question_id,
@@ -165,21 +189,31 @@ export async function POST(req) {
       }
     }
 
-    // Update user_quiz_attempts if user_id is provided
+    // --- Insert all answers in bulk ---
+    if (attemptId && userAnswersToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from("user_answers")
+        .insert(userAnswersToInsert);
+
+      if (insertError) {
+        console.error("Error inserting user_answers:", insertError);
+      }
+    }
+
+    // --- Update skor attempt ---
     if (user_id && attemptId) {
-      const finalScore = Math.round(earnedPoints); // Round to nearest integer for storage
-      
+      const finalScore = Math.round(earnedPoints);
+
       const { error: updateError } = await supabase
         .from("user_quiz_attempts")
         .update({
           finished_at: new Date().toISOString(),
-          score: finalScore
+          score: finalScore,
         })
         .eq("attempt_id", attemptId);
 
       if (updateError) {
         console.error("Error updating user attempt:", updateError);
-        // Don't throw error here, still return quiz results even if attempt update fails
       }
     }
 
@@ -189,7 +223,6 @@ export async function POST(req) {
       results,
     };
 
-    // Add attempt info to response if user_id was provided
     if (user_id && attemptId) {
       response.attempt_id = attemptId;
       response.user_id = user_id;
@@ -201,46 +234,3 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-// Example usage:
-// POST /api/submit-quiz
-// Body with user tracking:
-// {
-//   "quiz_id": "40d466a7-1862-41e6-a1cf-5f659425cab0",
-//   "user_id": "user-uuid-123",
-//   "answers": [
-//     {
-//       "question_id": "0b673d0c-783d-46b8-aa53-9a203f4cdffd",
-//       "type": "multiple_choice",
-//       "answer": "opt1"
-//     }
-//   ]
-// }
-
-// Body without user tracking (anonymous):
-// {
-//   "quiz_id": "40d466a7-1862-41e6-a1cf-5f659425cab0",
-//   "answers": [
-//     {
-//       "question_id": "0b673d0c-783d-46b8-aa53-9a203f4cdffd",
-//       "type": "multiple_choice",
-//       "answer": "opt1"
-//     }
-//   ]
-// }
-
-// Response with user tracking:
-// {
-//   "totalPoints": 3,
-//   "earnedPoints": 2.5,
-//   "attempt_id": "attempt-uuid-456",
-//   "user_id": "user-uuid-123",
-//   "results": [...]
-// }
-
-// Response without user tracking:
-// {
-//   "totalPoints": 3,
-//   "earnedPoints": 2.5,
-//   "results": [...]
-// }
