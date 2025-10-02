@@ -9,7 +9,8 @@ import {
   Globe,
   Heart,
   Shirt,
-  Sparkles
+  Sparkles,
+  Brain,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
@@ -19,7 +20,16 @@ const ProvinceDetail = ({ provinceData }) => {
   const heroRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  const { province, funfacts, tourism, language, food, ethnic_groups, traditional_clothing } = provinceData;
+  const {
+    province,
+    funfacts,
+    tourism,
+    language,
+    food,
+    ethnic_groups,
+    traditional_clothing,
+    quizzes
+  } = provinceData;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -43,7 +53,7 @@ const ProvinceDetail = ({ provinceData }) => {
       description: "Jelajahi tempat-tempat menakjubkan",
       gradient: "from-blue-600 via-purple-600 to-pink-600",
       count: tourism?.length || 0,
-      data: tourism
+      data: tourism,
     },
     {
       id: "languages",
@@ -52,7 +62,7 @@ const ProvinceDetail = ({ provinceData }) => {
       description: "Kekayaan linguistik nusantara",
       gradient: "from-emerald-600 via-teal-600 to-cyan-600",
       count: language?.length || 0,
-      data: language
+      data: language,
     },
     {
       id: "foods",
@@ -61,7 +71,7 @@ const ProvinceDetail = ({ provinceData }) => {
       description: "Cita rasa autentik daerah",
       gradient: "from-orange-600 via-red-600 to-pink-600",
       count: food?.length || 0,
-      data: food
+      data: food,
     },
     {
       id: "ethnic_groups",
@@ -70,7 +80,7 @@ const ProvinceDetail = ({ provinceData }) => {
       description: "Keberagaman budaya",
       gradient: "from-purple-600 via-indigo-600 to-blue-600",
       count: ethnic_groups?.length || 0,
-      data: ethnic_groups
+      data: ethnic_groups,
     },
     {
       id: "traditional_clothing",
@@ -79,7 +89,16 @@ const ProvinceDetail = ({ provinceData }) => {
       description: "Warisan busana tradisional",
       gradient: "from-pink-600 via-rose-600 to-red-600",
       count: traditional_clothing?.length || 0,
-      data: traditional_clothing
+      data: traditional_clothing,
+    },
+    {
+      id: "quizzes",
+      title: "Kuis Harian",
+      icon: Brain, // pilih icon dari lucide-react, misalnya Brain / HelpCircle / ClipboardCheck
+      description: "Uji pengetahuanmu tentang budaya",
+      gradient: "from-yellow-500 via-amber-600 to-orange-600",
+      count: quizzes?.length || 0,
+      data: quizzes,
     },
   ];
 
@@ -129,7 +148,10 @@ const ProvinceDetail = ({ provinceData }) => {
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            src={province?.image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center"}
+            src={
+              province?.image_url ||
+              "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center"
+            }
             alt={province?.name || "Province"}
             className="w-full h-full object-cover"
           />
@@ -156,7 +178,9 @@ const ProvinceDetail = ({ provinceData }) => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20"
           >
             <Sparkles className="w-4 h-4 text-primary-gold" />
-            <span className="text-white/90 text-sm font-medium">Jelajahi Budaya Indonesia</span>
+            <span className="text-white/90 text-sm font-medium">
+              Jelajahi Budaya Indonesia
+            </span>
           </motion.div>
 
           <motion.h1
@@ -176,7 +200,10 @@ const ProvinceDetail = ({ provinceData }) => {
           >
             <Users className="w-5 h-5 text-primary-gold" />
             <span className="text-white text-lg font-medium">
-              {province?.population ? new Intl.NumberFormat("id-ID").format(province.population) : "0"} jiwa
+              {province?.population
+                ? new Intl.NumberFormat("id-ID").format(province.population)
+                : "0"}{" "}
+              jiwa
             </span>
           </motion.div>
         </motion.div>
@@ -226,7 +253,10 @@ const ProvinceDetail = ({ provinceData }) => {
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
               className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: province?.description || "<p>Deskripsi belum tersedia.</p>" }}
+              dangerouslySetInnerHTML={{
+                __html:
+                  province?.description || "<p>Deskripsi belum tersedia.</p>",
+              }}
             />
           </CardContent>
         </Card>
@@ -245,7 +275,9 @@ const ProvinceDetail = ({ provinceData }) => {
             <CardContent className="p-10 md:p-16">
               <div className="flex items-center gap-3 mb-8">
                 <Sparkles className="w-6 h-6 text-primary-gold" />
-                <h2 className="text-3xl font-bold text-gray-900">Fakta Menarik</h2>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Fakta Menarik
+                </h2>
               </div>
               <div className="grid gap-4">
                 {funfacts.map((fact, index) => (
@@ -259,7 +291,9 @@ const ProvinceDetail = ({ provinceData }) => {
                     className="flex gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 hover:bg-white/80 hover:shadow-md transition-all duration-300"
                   >
                     <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-gold mt-2" />
-                    <p className="text-gray-700 text-lg leading-relaxed">{fact.fact}</p>
+                    <p className="text-gray-700 text-lg leading-relaxed">
+                      {fact.fact}
+                    </p>
                   </motion.div>
                 ))}
               </div>
@@ -284,7 +318,9 @@ const ProvinceDetail = ({ provinceData }) => {
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-gold/10 rounded-full mb-4"
           >
             <Sparkles className="w-4 h-4 text-primary-gold" />
-            <span className="text-primary-gold font-medium">Eksplorasi Budaya</span>
+            <span className="text-primary-gold font-medium">
+              Eksplorasi Budaya
+            </span>
           </motion.div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Jelajahi Lebih Dalam
@@ -298,14 +334,15 @@ const ProvinceDetail = ({ provinceData }) => {
           {categoryCards.map((card, index) => {
             const Icon = card.icon;
             const hasData = card.data && card.data.length > 0;
-            const imageUrl = hasData && card.data[0]?.image_url 
-              ? card.data[0].image_url 
-              : "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&crop=center";
-            
+            const imageUrl =
+              hasData && card.data[0]?.image_url
+                ? card.data[0].image_url
+                : "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&crop=center";
+
             return (
               <Link
                 key={card.id}
-                href={`/${province?.slug || 'province'}/${card.id}`}
+                href={`/${province?.slug || "province"}/${card.id}`}
                 passHref
               >
                 <motion.div
@@ -340,7 +377,7 @@ const ProvinceDetail = ({ provinceData }) => {
                         <div className="absolute top-6 right-6 z-10">
                           <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-full border border-white/30">
                             <span className="text-white font-semibold text-sm">
-                              {card.count} item{card.count > 1 ? 's' : ''}
+                              {card.count} item{card.count > 1 ? "s" : ""}
                             </span>
                           </div>
                         </div>
