@@ -3,7 +3,6 @@
 import { createServerClient } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 
-// simple shuffle function
 function shuffleArray(array) {
   return array
     .map((value) => ({ value, sort: Math.random() }))
@@ -11,8 +10,28 @@ function shuffleArray(array) {
     .map(({ value }) => value);
 }
 
+function shuffleMatchingPairs(pairs) {
+  const leftTexts = pairs.map((pair) => ({
+    pair_id: pair.pair_id,
+    text: pair.left_text,
+  }));
+
+  const rightTexts = pairs.map((pair) => ({
+    pair_id: pair.pair_id,
+    right_text: pair.right_text,
+  }));
+
+  const shuffledLeft = shuffleArray(leftTexts);
+  const shuffledRight = shuffleArray(rightTexts);
+
+  return {
+    left: shuffledLeft,
+    right: shuffledRight,
+  };
+}
+
 export async function GET(request, context) {
-  const params = await context.params; // ✅ await first
+  const params = context.params;
   const quizId = params["quiz-id"];
   if (!quizId) {
     return NextResponse.json({ error: "Quiz ID wajib ada" }, { status: 400 });
@@ -21,7 +40,6 @@ export async function GET(request, context) {
   const supabase = createServerClient();
 
   try {
-    // 1️⃣ Fetch quiz
     const { data: quiz, error: quizError } = await supabase
       .from("quizzes")
       .select("quiz_id, title")
@@ -36,14 +54,12 @@ export async function GET(request, context) {
       );
     }
 
-    // 2️⃣ Check if client wants questions
     const url = new URL(request.url);
     const includeQuestions =
       url.searchParams.get("include_questions") === "true";
 
     let questions = [];
     if (includeQuestions) {
-      // Fetch all questions
       const { data: qs, error: questionsError } = await supabase
         .from("questions")
         .select("question_id, type, text, points, image_url")
@@ -51,9 +67,6 @@ export async function GET(request, context) {
 
       if (questionsError) throw questionsError;
 
-      const questionIds = qs.map((q) => q.question_id);
-
-      // Separate question IDs by type
       const multipleChoiceIds = qs
         .filter((q) => q.type === "multiple_choice")
         .map((q) => q.question_id);
@@ -61,7 +74,6 @@ export async function GET(request, context) {
         .filter((q) => q.type === "matching")
         .map((q) => q.question_id);
 
-      // Fetch options and matching pairs
       const [optionsRes, pairsRes] = await Promise.all([
         supabase
           .from("options")
@@ -79,7 +91,6 @@ export async function GET(request, context) {
       const options = optionsRes.data || [];
       const matchingPairs = pairsRes.data || [];
 
-      // 3️⃣ Attach nested data & shuffle
       questions = qs.map((q) => {
         if (q.type === "multiple_choice") {
           const opts = options.filter((o) => o.question_id === q.question_id);
@@ -89,16 +100,34 @@ export async function GET(request, context) {
           const pairs = matchingPairs.filter(
             (p) => p.question_id === q.question_id
           );
-          return { ...q, matching_pairs: shuffleArray(pairs) };
+          
+          const shuffled = shuffleMatchingPairs(pairs);
+
+          return { 
+             ...q, 
+             // Array untuk zona drop (diacak urutannya)
+             matching_pairs: shuffled.left.map(item => ({ 
+                 pair_id: item.pair_id, 
+                 left_text: item.text, 
+                 // Kita harus menyediakan pair_id untuk identifikasi dropzone di front-end
+                 // dan memastikan ia terkait dengan 'left_text' yang benar
+                 right_text: pairs.find(p => p.pair_id === item.pair_id)?.right_text // Tambahkan right_text asli
+             })), 
+
+             // Opsi drag yang benar-benar diacak (right_text)
+             shuffled_options: shuffled.right.map(item => ({ 
+                 pair_id: item.pair_id, // Gunakan pair_id untuk identifikasi
+                 right_text: item.right_text, // Mengambil teks yang di-drag
+             })),
+          };
         }
-        // short_answer -> no answers sent
         return q;
       });
     }
 
     return NextResponse.json({
       quiz,
-      ...(includeQuestions ? { questions } : {}),
+      ...(includeQuestions ? { questions: shuffleArray(questions) } : {}),
     });
   } catch (err) {
     console.error(err);

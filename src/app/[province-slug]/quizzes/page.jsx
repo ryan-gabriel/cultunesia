@@ -1,3 +1,4 @@
+import Navbar from "@/components/Navbar/Navbar";
 import Quizzes from "@/components/page/province/Quizzes";
 import { fetchQuizzesServer } from "@/utils/ServerQuizzes";
 
@@ -10,7 +11,12 @@ const page = async (context) => {
     type: "province",
     province_slug: provinceSlug,
   });
-  return <Quizzes data={quizzes} />;
+  return (
+    <>
+      <Navbar />
+      <Quizzes data={quizzes} provinceSlug={provinceSlug} />;
+    </>
+  );
 };
 
 export default page;
