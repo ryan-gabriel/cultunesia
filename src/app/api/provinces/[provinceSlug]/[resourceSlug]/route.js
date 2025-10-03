@@ -98,14 +98,20 @@ export async function POST(req, context) {
 }
 
 // =================== PUT ===================
+
+const RESOURCES_WITHOUT_IMAGE = ["funfacts"];
+
 export async function PUT(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
+
   if (!allowedResources.includes(resourceSlug)) {
     return NextResponse.json(
       { error: "Resource tidak ditemukan" },
       { status: 404 }
     );
   }
+
+  const hasImage = !RESOURCES_WITHOUT_IMAGE.includes(resourceSlug);
 
   const supabase = createServerClient();
   const formData = await req.formData();
@@ -115,13 +121,19 @@ export async function PUT(req, context) {
 
   const fields = {};
   for (const [key, value] of formData.entries()) {
+    // Hanya masukkan kolom yang bukan "image" atau "id" ke dalam fields
     if (key !== "image" && key !== "id") fields[key] = value;
   }
 
-  // ambil record lama (cek exist + ambil image_url kalau ada)
+  // --- Ambil record lama (cek exist + ambil image_url *HANYA JIKA* resource memiliki gambar) ---
+  let selectFields = "id";
+  if (hasImage) {
+    selectFields += ", image_url"; // Tambahkan image_url jika resource memilikinya
+  }
+
   const { data: oldRecord, error: oldError } = await supabase
     .from(resourceSlug)
-    .select("id, image_url")
+    .select(selectFields) // Gunakan selectFields yang sudah disesuaikan
     .eq("id", id)
     .eq("province_slug", provinceSlug)
     .maybeSingle();
@@ -133,26 +145,40 @@ export async function PUT(req, context) {
     );
   }
 
-  // opsional update image
-  const newImage = formData.get("image");
-  if (newImage?.size > 0) {
-    let uploadPath;
-    if (oldRecord.image_url) {
-      const parts = oldRecord.image_url.split("/general/");
-      uploadPath = parts[1];
-    } else {
-      const ext = newImage.name.split(".").pop() || "png";
-      uploadPath = `provinces/${provinceSlug}-${Date.now()}.${ext}`;
+  // --- Opsional update image (HANYA jika resource memiliki gambar) ---
+  if (hasImage) {
+    const newImage = formData.get("image");
+    if (newImage?.size > 0) {
+      let uploadPath;
+      // Periksa apakah oldRecord.image_url ada dan bukan null/undefined sebelum split
+      if (oldRecord.image_url) {
+        // Logika untuk mendapatkan path lama dari full URL Supabase
+        const parts = oldRecord.image_url.split("/general/");
+        // Pastikan parts[1] ada sebelum digunakan
+        if (parts[1]) {
+          uploadPath = parts[1];
+        } else {
+          // Fallback jika format URL tidak sesuai, buat path baru
+          const ext = newImage.name.split(".").pop() || "png";
+          uploadPath = `provinces/${provinceSlug}-${Date.now()}.${ext}`;
+        }
+      } else {
+        // Buat path baru jika image_url kosong
+        const ext = newImage.name.split(".").pop() || "png";
+        uploadPath = `provinces/${provinceSlug}-${Date.now()}.${ext}`;
+      }
+
+      const imageUrl = await uploadFileToStorage(
+        newImage,
+        uploadPath,
+        "general",
+        "replace" // Asumsi 'replace' akan menimpa file di path yang sama
+      );
+      fields.image_url = imageUrl;
     }
-    const imageUrl = await uploadFileToStorage(
-      newImage,
-      uploadPath,
-      "general",
-      "replace"
-    );
-    fields.image_url = imageUrl;
   }
 
+  // --- Lakukan Update ke Supabase ---
   const { data, error } = await supabase
     .from(resourceSlug)
     .update(fields)
@@ -162,6 +188,7 @@ export async function PUT(req, context) {
     .single();
 
   if (error) {
+    console.error("Supabase Update Error:", error);
     return NextResponse.json(
       { error: `Gagal mengupdate ${resourceSlug}` },
       { status: 500 }
@@ -174,6 +201,7 @@ export async function PUT(req, context) {
 // =================== DELETE ===================
 export async function DELETE(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
+
   if (!allowedResources.includes(resourceSlug)) {
     return NextResponse.json(
       { error: "Resource tidak ditemukan" },
@@ -181,15 +209,23 @@ export async function DELETE(req, context) {
     );
   }
 
+  const hasImage = !RESOURCES_WITHOUT_IMAGE.includes(resourceSlug);
+
+  // Menggunakan req.json() untuk mendapatkan body request
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "ID wajib ada" }, { status: 400 });
 
   const supabase = createServerClient();
 
-  // ambil record (cek exist + ambil image_url kalau ada)
+  // --- Ambil record (cek exist + ambil image_url *HANYA JIKA* resource memiliki gambar) ---
+  let selectFields = "id";
+  if (hasImage) {
+    selectFields += ", image_url"; // Tambahkan image_url jika resource memilikinya
+  }
+
   const { data: resourceItem, error: fetchError } = await supabase
     .from(resourceSlug)
-    .select("id, image_url")
+    .select(selectFields) // Gunakan selectFields yang sudah disesuaikan
     .eq("id", id)
     .eq("province_slug", provinceSlug)
     .maybeSingle();
@@ -201,18 +237,29 @@ export async function DELETE(req, context) {
     );
   }
 
-  // hapus file kalau memang ada image_url
-  if (resourceItem.image_url) {
+  // --- Hapus file dari Storage (HANYA jika resource memiliki gambar) ---
+  if (hasImage && resourceItem.image_url) {
     const bucket = "general";
     try {
+      // Asumsi: process.env.NEXT_PUBLIC_SUPABASE_URL tersedia
       const publicUrlPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/`;
       const filePath = resourceItem.image_url.replace(publicUrlPrefix, "");
-      await supabase.storage.from(bucket).remove([filePath]);
+
+      // Pastikan filePath tidak kosong sebelum mencoba menghapus
+      if (filePath) {
+        await supabase.storage.from(bucket).remove([filePath]);
+      } else {
+        console.warn(
+          `File path kosong untuk resource: ${resourceSlug} dengan ID: ${id}`
+        );
+      }
     } catch (err) {
-      console.error("Gagal hapus image:", err);
+      // Log error, tapi lanjutkan penghapusan data
+      console.error("Gagal hapus image dari storage:", err);
     }
   }
 
+  // --- Hapus record dari Database ---
   const { error } = await supabase
     .from(resourceSlug)
     .delete()
@@ -220,6 +267,7 @@ export async function DELETE(req, context) {
     .eq("province_slug", provinceSlug);
 
   if (error) {
+    console.error("Supabase Delete Error:", error);
     return NextResponse.json(
       { error: `Gagal menghapus ${resourceSlug}` },
       { status: 500 }

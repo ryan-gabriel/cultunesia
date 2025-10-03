@@ -11,6 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ResourceTabs } from "@/components/ResourceTabs";
+import DOMPurify from "isomorphic-dompurify";
 
 // Contoh fetch function, ganti sesuai API
 async function fetchProvinceBySlug(slug) {
@@ -44,7 +45,8 @@ const ProvincePage = () => {
     loadProvince();
   }, [slug]);
 
-  if (loading) return <p className="text-center py-20 text-gray-500">Memuat data...</p>;
+  if (loading)
+    return <p className="text-center py-20 text-gray-500">Memuat data...</p>;
   if (error) return <p className="text-center py-20 text-red-500">{error}</p>;
   if (!province) return null;
 
@@ -57,13 +59,16 @@ const ProvincePage = () => {
     "traditional_clothing",
   ];
 
+  const raw = province?.description ?? "";
+  const clean = DOMPurify.sanitize(raw);
+
   return (
     <>
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+            <BreadcrumbLink href="/dashboard/provinces">Dashboard</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -90,12 +95,15 @@ const ProvincePage = () => {
             <p className="text-gray-600 mb-4">
               Populasi: {province.population.toLocaleString("id-ID")}
             </p>
-            <p className="text-gray-800">{province.description}</p>
+            <div
+              className="text-gray-800 prose" // optional: prose utk styling typography (Tailwind Typography)
+              dangerouslySetInnerHTML={{ __html: clean }}
+            />
           </div>
         </div>
 
         {/* Tabs for resources */}
-        <ResourceTabs slug={slug}/>
+        <ResourceTabs slug={slug} />
       </main>
     </>
   );

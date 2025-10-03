@@ -194,6 +194,7 @@ export const ResourceFormDialog = ({
           method,
           body: form,
         });
+        
       }
 
       const json = await res.json();

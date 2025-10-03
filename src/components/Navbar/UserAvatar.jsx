@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function UserAvatar() {
@@ -29,14 +29,20 @@ export default function UserAvatar() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
             <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={profile?.avatar_url || "/default-avatar.png"}
-                alt={profile?.full_name || session?.user?.email}
-              />
-              <AvatarFallback>
+              {profile?.avatar_url && (
+                <AvatarImage
+                  src={profile.avatar_url}
+                  alt={profile?.full_name || session?.user?.email}
+                />
+              )}
+              <AvatarFallback className="flex items-center justify-center">
                 {profile?.full_name?.charAt(0) ??
-                  session?.user?.email?.charAt(0) ??
-                  "?"}
+                session?.user?.email?.charAt(0) ? (
+                  profile?.full_name?.charAt(0) ??
+                  session?.user?.email?.charAt(0)
+                ) : (
+                  <User className="h-4 w-4 text-muted-foreground" />
+                )}
               </AvatarFallback>
             </Avatar>
           </Button>
