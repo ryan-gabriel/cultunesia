@@ -15,7 +15,10 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
-const ProvinceDetail = ({ provinceData }) => {
+// Catatan: Konstanta GOLD_DARK_MODE dan GOLD_LIGHT_MODE tidak diperlukan lagi
+// karena kita akan mengandalkan class Tailwind (text-primary-gold, dark:text-yellow-400, dll.)
+
+const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
   const containerRef = useRef(null);
   const heroRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -40,6 +43,11 @@ const ProvinceDetail = ({ provinceData }) => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
   const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 };
   const heroYSpring = useSpring(heroY, springConfig);
+  
+  // Karena tidak ada isDarkMode, kita akan menggunakan class Tailwind sepenuhnya
+  // Asumsi: Anda memiliki warna 'primary-gold' di tailwind.config.js
+  const GOLD_CLASS = 'text-primary-gold dark:text-yellow-400';
+  const GOLD_BG_CLASS = 'bg-primary-gold dark:bg-yellow-400';
 
   useEffect(() => {
     setIsVisible(true);
@@ -94,7 +102,7 @@ const ProvinceDetail = ({ provinceData }) => {
     {
       id: "quizzes",
       title: "Kuis Harian",
-      icon: Brain, // pilih icon dari lucide-react, misalnya Brain / HelpCircle / ClipboardCheck
+      icon: Brain,
       description: "Uji pengetahuanmu tentang budaya",
       gradient: "from-yellow-500 via-amber-600 to-orange-600",
       count: quizzes?.length || 0,
@@ -133,7 +141,7 @@ const ProvinceDetail = ({ provinceData }) => {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30"
+      className="min-h-screen transition-colors duration-500 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800"
     >
       {/* Hero Section */}
       <motion.div
@@ -143,6 +151,7 @@ const ProvinceDetail = ({ provinceData }) => {
       >
         {/* Background Image with Enhanced Overlay */}
         <div className="absolute inset-0">
+          {/* Darker/Lighter overlay based on theme */}
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-transparent z-10" />
           <motion.img
             initial={{ scale: 1.1 }}
@@ -155,12 +164,15 @@ const ProvinceDetail = ({ provinceData }) => {
             alt={province?.name || "Province"}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary-gold/30 via-transparent to-transparent" />
+          {/* Primary Gold Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary-gold/30 via-transparent to-transparent dark:from-yellow-400/30" />
         </div>
 
         {/* Decorative Elements */}
         <div className="absolute inset-0 z-10 pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-gold/10 rounded-full blur-3xl" />
+          <div 
+            className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl bg-primary-gold/10 dark:bg-yellow-400/10"
+          />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
         </div>
 
@@ -177,7 +189,7 @@ const ProvinceDetail = ({ provinceData }) => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20"
           >
-            <Sparkles className="w-4 h-4 text-primary-gold" />
+            <Sparkles className={`w-4 h-4 ${GOLD_CLASS}`} />
             <span className="text-white/90 text-sm font-medium">
               Jelajahi Budaya Indonesia
             </span>
@@ -198,7 +210,7 @@ const ProvinceDetail = ({ provinceData }) => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="inline-flex items-center justify-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20"
           >
-            <Users className="w-5 h-5 text-primary-gold" />
+            <Users className={`w-5 h-5 ${GOLD_CLASS}`} />
             <span className="text-white text-lg font-medium">
               {province?.population
                 ? new Intl.NumberFormat("id-ID").format(province.population)
@@ -233,7 +245,7 @@ const ProvinceDetail = ({ provinceData }) => {
         transition={{ duration: 0.8 }}
         className="container mx-auto px-6 -mt-32 mb-24 relative z-30"
       >
-        <Card className="backdrop-blur-xl bg-white/95 border-0 shadow-2xl rounded-3xl overflow-hidden">
+        <Card className="backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 border dark:border-gray-800 shadow-2xl rounded-3xl overflow-hidden">
           <CardContent className="p-10 md:p-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -242,8 +254,11 @@ const ProvinceDetail = ({ provinceData }) => {
               transition={{ delay: 0.2 }}
               className="flex items-center gap-3 mb-6"
             >
-              <div className="h-1 w-12 bg-gradient-to-r from-primary-gold to-primary-gold/50 rounded-full" />
-              <h2 className="text-4xl font-bold text-gray-900">
+              {/* Mengganti inline style gradien dengan class Tailwind */}
+              <div 
+                className="h-1 w-12 rounded-full bg-gradient-to-r from-primary-gold to-primary-gold/50 dark:from-yellow-400 dark:to-yellow-400/50"
+              />
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
                 Tentang {province?.name || "Provinsi"}
               </h2>
             </motion.div>
@@ -252,7 +267,8 @@ const ProvinceDetail = ({ provinceData }) => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
-              className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+              // Mengganti inline style warna teks dengan class Tailwind
+              className="prose prose-lg max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
               dangerouslySetInnerHTML={{
                 __html:
                   province?.description || "<p>Deskripsi belum tersedia.</p>",
@@ -271,11 +287,13 @@ const ProvinceDetail = ({ provinceData }) => {
           transition={{ duration: 0.8 }}
           className="container mx-auto px-6 mb-24"
         >
-          <Card className="backdrop-blur-xl bg-gradient-to-br from-primary-gold/5 to-blue-50/50 border border-primary-gold/20 shadow-xl rounded-3xl overflow-hidden">
+          <Card 
+            className="backdrop-blur-xl bg-gradient-to-br from-primary-gold/5 dark:from-gray-950/20 to-blue-50/50 dark:to-gray-800/50 border border-primary-gold/20 dark:border-yellow-400/20 shadow-xl rounded-3xl overflow-hidden"
+          >
             <CardContent className="p-10 md:p-16">
               <div className="flex items-center gap-3 mb-8">
-                <Sparkles className="w-6 h-6 text-primary-gold" />
-                <h2 className="text-3xl font-bold text-gray-900">
+                <Sparkles className={`w-6 h-6 ${GOLD_CLASS}`} />
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Fakta Menarik
                 </h2>
               </div>
@@ -288,10 +306,12 @@ const ProvinceDetail = ({ provinceData }) => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    className="flex gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/60 hover:bg-white/80 hover:shadow-md transition-all duration-300"
+                    className="flex gap-4 p-5 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-gray-600/60 hover:shadow-md transition-all duration-300"
                   >
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-gold mt-2" />
-                    <p className="text-gray-700 text-lg leading-relaxed">
+                    <div 
+                      className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${GOLD_BG_CLASS}`}
+                    />
+                    <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
                       {fact.fact}
                     </p>
                   </motion.div>
@@ -315,17 +335,18 @@ const ProvinceDetail = ({ provinceData }) => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-gold/10 rounded-full mb-4"
+            // Mengganti inline style latar belakang dengan class Tailwind
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-primary-gold/10 dark:bg-yellow-400/10"
           >
-            <Sparkles className="w-4 h-4 text-primary-gold" />
-            <span className="text-primary-gold font-medium">
+            <Sparkles className={`w-4 h-4 ${GOLD_CLASS}`} />
+            <span className={`font-medium ${GOLD_CLASS}`}>
               Eksplorasi Budaya
             </span>
           </motion.div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Jelajahi Lebih Dalam
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
             Temukan kekayaan budaya dan tradisi dari berbagai aspek kehidupan
           </p>
         </div>
@@ -357,7 +378,7 @@ const ProvinceDetail = ({ provinceData }) => {
                   }}
                   className="group cursor-pointer h-full"
                 >
-                  <Card className="h-96 overflow-hidden border-0 shadow-xl rounded-3xl bg-white hover:shadow-2xl transition-all duration-500">
+                  <Card className="h-96 overflow-hidden border-0 shadow-xl rounded-3xl bg-white dark:bg-gray-800 hover:shadow-2xl transition-all duration-500">
                     <div className="relative h-full">
                       {/* Background */}
                       <div className="absolute inset-0">
@@ -393,17 +414,21 @@ const ProvinceDetail = ({ provinceData }) => {
                           whileHover={{ scale: 1.1, rotate: 5 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg group-hover:bg-primary-gold group-hover:text-gray-900 transition-all duration-500">
-                            <Icon className="w-8 h-8" strokeWidth={2} />
+                          <div 
+                            className="w-16 h-16 bg-white/20 dark:bg-gray-700/50 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-lg group-hover:text-gray-900 transition-all duration-500"
+                          >
+                            <Icon className={`w-8 h-8 ${GOLD_CLASS}`} strokeWidth={2} />
                           </div>
                         </motion.div>
-                        <h3 className="text-2xl font-bold mb-3 group-hover:text-primary-gold transition-colors duration-300">
+                        <h3 className="text-2xl font-bold mb-3 group-hover:text-primary-gold dark:group-hover:text-yellow-400 transition-colors duration-300">
                           {card.title}
                         </h3>
                         <p className="text-white/90 text-sm mb-6 leading-relaxed">
                           {card.description}
                         </p>
-                        <div className="flex items-center gap-2 text-primary-gold font-semibold group-hover:gap-3 transition-all duration-300">
+                        <div 
+                          className={`flex items-center gap-2 font-semibold group-hover:gap-3 transition-all duration-300 ${GOLD_CLASS}`}
+                        >
                           <span>Selengkapnya</span>
                           <motion.span
                             animate={{ x: [0, 5, 0] }}

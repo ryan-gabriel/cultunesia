@@ -125,7 +125,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
   }, [loading, hoveredProvince]);
 
   return (
-    <div className="relative w-full h-fit">
+    <div className="relative w-full h-fit dark:bg-gray-900">
       <svg
         ref={svgRef}
         xmlns="http://www.w3.org/2000/svg"
@@ -203,7 +203,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
                   d={d}
                   fill="#F5BD02"
                   stroke="none"
-                  strokeWidth="1.5"
+                  strokeWidth="2"
                   style={{
                     transition: "fill 0.3s, opacity 0.3s",
                     opacity:
@@ -226,7 +226,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
       {!loading && hoveredProvince && (
         <div
           ref={tooltipRef}
-          className="fixed pointer-events-none z-50 p-4 rounded-xl shadow-xl border w-64 bg-white text-gray-900"
+          className="fixed pointer-events-none z-50 p-4 rounded-xl shadow-xl border w-64 bg-white text-gray-900 dark:bg-gray-900 dark:text-white"
           style={{
             // Cek apakah mouse ada di sebelah kanan layar
             left:
@@ -242,10 +242,10 @@ const MapSvg = ({ provincesFromDB = [] }) => {
           }}
         >
           <h3 className="font-bold text-lg">{hoveredProvince.name}</h3>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3">
             {hoveredProvince.description}
           </p>
-          <p className="text-xs text-gray-500 mt-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
             <strong>Populasi:</strong>{" "}
             {new Intl.NumberFormat("id-ID").format(hoveredProvince.population)}
           </p>
