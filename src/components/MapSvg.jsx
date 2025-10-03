@@ -125,7 +125,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
   }, [loading, hoveredProvince]);
 
   return (
-    <div className="relative w-full h-fit dark:bg-gray-900">
+    <div className="relative w-full h-fit dark:bg-gray-800/95">
       <svg
         ref={svgRef}
         xmlns="http://www.w3.org/2000/svg"

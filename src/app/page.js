@@ -13,7 +13,9 @@ import {
   Settings,
   ChevronUp,
   ChevronDown,
+  List, // Import List icon for the new link
 } from "lucide-react";
+import Link from "next/link"; // Import Link for navigation
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +48,9 @@ export default function Home() {
   const lastTouchDistance = useRef(0);
   const animationFrameId = useRef(null);
 
+  const mapWidth = 1875.5;
+  const mapHeight = 1000;
+
   // Prevent pull-to-refresh on mobile
   useEffect(() => {
     const preventPullToRefresh = (e) => {
@@ -53,55 +58,48 @@ export default function Home() {
         e.preventDefault();
       }
     };
-
     const preventOverscroll = (e) => {
       if (mapRef.current?.contains(e.target)) {
         e.preventDefault();
       }
     };
-
-    document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
-    document.addEventListener('touchmove', preventOverscroll, { passive: false });
-
-    // Also prevent overscroll behavior
-    document.body.style.overscrollBehavior = 'none';
-    
+    document.addEventListener("touchstart", preventPullToRefresh, {
+      passive: false,
+    });
+    document.addEventListener("touchmove", preventOverscroll, {
+      passive: false,
+    });
+    document.body.style.overscrollBehavior = "none";
     return () => {
-      document.removeEventListener('touchstart', preventPullToRefresh);
-      document.removeEventListener('touchmove', preventOverscroll);
-      document.body.style.overscrollBehavior = 'auto';
+      document.removeEventListener("touchstart", preventPullToRefresh);
+      document.removeEventListener("touchmove", preventOverscroll);
+      document.body.style.overscrollBehavior = "auto";
     };
   }, []);
 
-  // Check screen size and set initial position
+  // 🛠️ Check screen size and set initial map position/scale
   useEffect(() => {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
 
       if (mobile) {
-        // Auto-center and zoom for mobile
+        // --- 🎯 CHANGE 1: Set initial scale to 1 (100%) on mobile ---
         const containerWidth = window.innerWidth;
         const containerHeight = window.innerHeight;
-        const mapWidth = 1875.5;
-        const mapHeight = 1000; // Approximate map height
-        
-        // Calculate scale to fit map with some padding
-        const scaleX = (containerWidth * 0.9) / mapWidth;
-        const scaleY = (containerHeight * 0.9) / mapHeight;
-        const optimalScale = Math.min(scaleX, scaleY);
-        
-        setScale(optimalScale);
-        
-        // Center the map
-        const scaledMapWidth = mapWidth * optimalScale;
-        const scaledMapHeight = mapHeight * optimalScale;
+
+        const targetScale = 1; // Always start at 100% zoom (1)
+        setScale(targetScale);
+
+        const scaledMapWidth = mapWidth * targetScale;
+        const scaledMapHeight = mapHeight * targetScale;
+
+        // Center the map, which will likely push the edges off-screen
         const offsetX = (containerWidth - scaledMapWidth) / 2;
         const offsetY = (containerHeight - scaledMapHeight) / 2;
-        
+
         setPosition({ x: offsetX, y: offsetY });
       } else {
-        // Desktop default
         setScale(1);
         setPosition({ x: 0, y: 0 });
       }
@@ -113,16 +111,14 @@ export default function Home() {
   }, []);
 
   const smoothSetScale = useCallback((newScale) => {
-    if (animationFrameId.current) {
+    if (animationFrameId.current)
       cancelAnimationFrame(animationFrameId.current);
-    }
     setScale(newScale);
   }, []);
 
   const smoothSetPosition = useCallback((newPosition) => {
-    if (animationFrameId.current) {
+    if (animationFrameId.current)
       cancelAnimationFrame(animationFrameId.current);
-    }
     setPosition(newPosition);
   }, []);
 
@@ -131,32 +127,30 @@ export default function Home() {
   }, [smoothSetScale]);
 
   const handleZoomOut = useCallback(() => {
+    // Keep minimum scale for mobile at a reasonable value, even if initial is 1
     const minScale = isMobile ? 0.2 : 0.5;
     smoothSetScale((prev) => Math.max(prev / 1.3, minScale));
   }, [isMobile, smoothSetScale]);
 
+  // 🛠️ Reset ulang sesuai mode (Adjusted for new mobile scale logic)
   const handleReset = useCallback(() => {
     if (isMobile) {
-      // Smart reset for mobile - center the map
+      // --- 🎯 CHANGE 2: Set reset scale to 1 (100%) on mobile ---
       const containerWidth = window.innerWidth;
       const containerHeight = window.innerHeight;
-      const mapWidth = 1875.5;
-      const mapHeight = 1000;
       
-      const scaleX = (containerWidth * 0.9) / mapWidth;
-      const scaleY = (containerHeight * 0.9) / mapHeight;
-      const optimalScale = Math.min(scaleX, scaleY);
+      const targetScale = 1; // Reset to 100% zoom
+      smoothSetScale(targetScale);
+
+      const scaledMapWidth = mapWidth * targetScale;
+      const scaledMapHeight = mapHeight * targetScale;
       
-      smoothSetScale(optimalScale);
-      
-      const scaledMapWidth = mapWidth * optimalScale;
-      const scaledMapHeight = mapHeight * optimalScale;
+      // Center position
       const offsetX = (containerWidth - scaledMapWidth) / 2;
       const offsetY = (containerHeight - scaledMapHeight) / 2;
-      
+
       smoothSetPosition({ x: offsetX, y: offsetY });
     } else {
-      // Standard reset for desktop
       smoothSetScale(1);
       smoothSetPosition({ x: 0, y: 0 });
     }
@@ -165,7 +159,9 @@ export default function Home() {
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        );
       });
       setIsFullscreen(true);
     } else {
@@ -181,7 +177,8 @@ export default function Home() {
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const handleWheel = useCallback(
@@ -195,7 +192,7 @@ export default function Home() {
       const zoomIntensity = 0.1;
       const wheel = e.deltaY < 0 ? 1 : -1;
       const zoom = Math.exp(wheel * zoomIntensity);
-      
+
       const newScale = Math.min(Math.max(scale * zoom, 0.5), 10);
 
       const mouseX = e.clientX - rect.left;
@@ -246,55 +243,61 @@ export default function Home() {
     }
   };
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging.current) return;
-    e.preventDefault();
-    
-    smoothSetPosition({
-      x: e.clientX - startPos.current.x,
-      y: e.clientY - startPos.current.y,
-    });
-  }, [smoothSetPosition]);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
 
-  const handleTouchMove = useCallback((e) => {
-    e.preventDefault(); // Prevent pull-to-refresh
-    
-    if (e.touches.length === 1 && isDragging.current) {
-      const touch = e.touches[0];
       smoothSetPosition({
-        x: touch.clientX - startPos.current.x,
-        y: touch.clientY - startPos.current.y,
+        x: e.clientX - startPos.current.x,
+        y: e.clientY - startPos.current.y,
       });
-    } else if (e.touches.length === 2) {
-      // Pinch zoom
-      const currentDistance = getTouchDistance(e.touches);
-      const distanceChange = currentDistance - lastTouchDistance.current;
-      
-      if (Math.abs(distanceChange) > 5) {
-        const zoomFactor = currentDistance / lastTouchDistance.current;
-        const newScale = Math.min(Math.max(scale * zoomFactor, 0.2), 10);
-        
-        // Zoom towards the center of the two touches
-        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const rect = mapRef.current?.getBoundingClientRect();
-        
-        if (rect) {
-          const relX = centerX - rect.left;
-          const relY = centerY - rect.top;
-          
-          const scaleChange = newScale / scale;
-          const newX = position.x - (relX - position.x) * (scaleChange - 1);
-          const newY = position.y - (relY - position.y) * (scaleChange - 1);
-          
-          smoothSetScale(newScale);
-          smoothSetPosition({ x: newX, y: newY });
+    },
+    [smoothSetPosition]
+  );
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      e.preventDefault(); // Prevent pull-to-refresh
+
+      if (e.touches.length === 1 && isDragging.current) {
+        const touch = e.touches[0];
+        smoothSetPosition({
+          x: touch.clientX - startPos.current.x,
+          y: touch.clientY - startPos.current.y,
+        });
+      } else if (e.touches.length === 2) {
+        // Pinch zoom
+        const currentDistance = getTouchDistance(e.touches);
+        const distanceChange = currentDistance - lastTouchDistance.current;
+
+        if (Math.abs(distanceChange) > 5) {
+          const zoomFactor = currentDistance / lastTouchDistance.current;
+          const newScale = Math.min(Math.max(scale * zoomFactor, 0.2), 10);
+
+          // Zoom towards the center of the two touches
+          const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          const rect = mapRef.current?.getBoundingClientRect();
+
+          if (rect) {
+            const relX = centerX - rect.left;
+            const relY = centerY - rect.top;
+
+            const scaleChange = newScale / scale;
+            const newX = position.x - (relX - position.x) * (scaleChange - 1);
+            const newY = position.y - (relY - position.y) * (scaleChange - 1);
+
+            smoothSetScale(newScale);
+            smoothSetPosition({ x: newX, y: newY });
+          }
+
+          lastTouchDistance.current = currentDistance;
         }
-        
-        lastTouchDistance.current = currentDistance;
       }
-    }
-  }, [scale, position, smoothSetScale, smoothSetPosition]);
+    },
+    [scale, position, smoothSetScale, smoothSetPosition]
+  );
 
   const handleMouseUp = useCallback(() => {
     isDragging.current = false;
@@ -371,7 +374,9 @@ export default function Home() {
             <div className="w-8 h-8 bg-primary-gold dark:bg-yellow-500 rounded-lg flex items-center justify-center">
               <Settings className="w-4 h-4 text-black" />
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Kontrol</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              Kontrol
+            </span>
           </div>
           {controlsExpanded ? (
             <ChevronDown className="w-5 h-5 dark:text-white" />
@@ -432,7 +437,10 @@ export default function Home() {
                 </span>
               </Button>
               <div className="text-center">
-                <Badge variant="secondary" className="px-3 py-1 dark:bg-gray-700 dark:text-white">
+                <Badge
+                  variant="secondary"
+                  className="px-3 py-1 dark:bg-gray-700 dark:text-white"
+                >
                   Zoom: {zoomLevel}%
                 </Badge>
               </div>
@@ -508,6 +516,33 @@ export default function Home() {
     </motion.div>
   );
 
+  // New Mobile Tip/Link Component
+  const MobileProvinceTip = () => (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3, duration: 0.6 }}
+      className="absolute bottom-4 left-4 z-30"
+    >
+      <Card className="border-0 shadow-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg dark:border-gray-700">
+        <CardContent className="p-3">
+          <Link href="/provinces" passHref>
+            <Button
+              variant="default"
+              className="w-full justify-start gap-3 bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-700 dark:hover:bg-blue-800 h-12"
+            >
+              <List className="w-5 h-5" />
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium">Lihat Daftar Provinsi</span>
+                <span className="text-xs opacity-80">Versi ringan & cepat</span>
+              </div>
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+
   return (
     <>
       <Navbar />
@@ -519,12 +554,17 @@ export default function Home() {
         >
           <main
             ref={containerRef}
-            className={`relative transition-all duration-500 ${
-              isFullscreen ? "h-screen" : "h-screen"
-            }`}
+            className="relative h-screen transition-all duration-500"
           >
-            {isMobile ? <MobileControls /> : <DesktopControls />}
-            
+            {isMobile ? (
+              <>
+                <MobileControls />
+                <MobileProvinceTip /> {/* Add the new mobile tip */}
+              </>
+            ) : (
+              <DesktopControls />
+            )}
+
             {!isMobile && !isFullscreen && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -561,7 +601,7 @@ export default function Home() {
               role="img"
               aria-label="Peta interaktif provinsi Indonesia"
               tabIndex={0}
-              style={{ touchAction: 'none' }}
+              style={{ touchAction: "none" }}
             >
               {!isMobile && (
                 <div className="absolute inset-0 opacity-5 dark:opacity-10">
@@ -574,24 +614,24 @@ export default function Home() {
                   />
                 </div>
               )}
-              
+
               <motion.div
                 className="w-full h-full"
                 style={{
                   transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
                   transformOrigin: "center center",
-                  willChange: 'transform',
+                  willChange: "transform",
                 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 300, 
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
                   damping: 30,
-                  mass: 0.5
+                  mass: 0.5,
                 }}
               >
                 <MapSvg />
               </motion.div>
-              
+
               <motion.div
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
