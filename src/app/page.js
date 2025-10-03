@@ -524,22 +524,7 @@ export default function Home() {
       transition={{ delay: 0.3, duration: 0.6 }}
       className="absolute bottom-4 left-4 z-30"
     >
-      <Card className="border-0 shadow-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg dark:border-gray-700">
-        <CardContent className="p-3">
-          <Link href="/provinces" passHref>
-            <Button
-              variant="default"
-              className="w-full justify-start gap-3 bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-700 dark:hover:bg-blue-800 h-12"
-            >
-              <List className="w-5 h-5" />
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">Lihat Daftar Provinsi</span>
-                <span className="text-xs opacity-80">Versi ringan & cepat</span>
-              </div>
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      
     </motion.div>
   );
 

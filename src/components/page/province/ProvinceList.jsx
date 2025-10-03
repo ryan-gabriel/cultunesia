@@ -1,195 +1,257 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Users, Info, ArrowRight, Globe, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  MapPin,
+  Users,
+  ArrowRight,
+  Globe,
+  Search,
+  Info,
+  ArrowDownUp,
+  ArrowDownAZ,
+  ArrowUpZA,
+  ArrowDown10,
+  ArrowUp01,
+} from "lucide-react";
 
-// Asumsikan komponen UI dasar (Input, Button, dll.) diimpor dari shadcn/ui
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 10,
-    },
-  },
-};
-
-/**
- * Komponen untuk menampilkan daftar provinsi dalam format kartu yang elegan dengan filter.
- */
-export default function ProvincesList({ provinceData }) {
+const ProvincesList = ({ provinceData }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "ascending",
+  });
 
-  // 1. Filtering Logic
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const filteredProvinces = useMemo(() => {
-    if (!searchTerm) {
-      return provinceData.filter((p) => p.slug);
+    if (!provinceData) return [];
+    let provinces = provinceData.filter((p) => p.slug);
+    if (searchTerm) {
+      const lowercasedSearch = searchTerm.toLowerCase();
+      provinces = provinces.filter((p) =>
+        p.name?.toLowerCase().includes(lowercasedSearch)
+      );
     }
-    const lowercasedSearch = searchTerm.toLowerCase();
-    return provinceData.filter(
-      (p) =>
-        p.slug &&
-        (p.name?.toLowerCase().includes(lowercasedSearch) ||
-         p.description?.toLowerCase().includes(lowercasedSearch))
-    );
+    return provinces;
   }, [provinceData, searchTerm]);
 
-  const totalProvinces = provinceData.length;
-  const currentCount = filteredProvinces.length;
+  const sortedAndFilteredProvinces = useMemo(() => {
+    let sortableItems = [...filteredProvinces];
+    sortableItems.sort((a, b) => {
+      if (sortConfig.key === "name") {
+        const nameA = a.name || "";
+        const nameB = b.name || "";
+        if (sortConfig.direction === "ascending") {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      } else if (sortConfig.key === "population") {
+        const popA = parseInt(a.population, 10) || 0;
+        const popB = parseInt(b.population, 10) || 0;
+        if (sortConfig.direction === "ascending") {
+          return popA - popB;
+        } else {
+          return popB - popA;
+        }
+      }
+      return 0;
+    });
+    return sortableItems;
+  }, [filteredProvinces, sortConfig]);
 
-  // 2. Empty State Handling (Filtered or Initial)
-  if (totalProvinces === 0) {
+  const sortLabels = {
+    "name-ascending": "Nama (A-Z)",
+    "name-descending": "Nama (Z-A)",
+    "population-descending": "Populasi (Tertinggi)",
+    "population-ascending": "Populasi (Terendah)",
+  };
+  const currentSortLabel = sortLabels[`${sortConfig.key}-${sortConfig.direction}`];
+
+  if (!provinceData || provinceData.length === 0) {
     return (
-      <div className="text-center py-16 bg-slate-800 rounded-xl mx-4 my-8 shadow-2xl text-slate-400">
-        <Info className="w-8 h-8 mx-auto mb-3 text-amber-500" />
-        <p className="text-lg font-medium">
-          Tidak ada data provinsi yang dimuat.
-        </p>
+      <div className="min-h-[60vh] flex items-center justify-center text-center p-6">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+          {/* PERUBAHAN WARNA: Ikon empty state lebih kuat */}
+          <div className="w-24 h-24 bg-gradient-to-br from-amber-200 to-yellow-200 dark:from-amber-800 dark:to-yellow-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <Info className="w-12 h-12 text-amber-700 dark:text-amber-300" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Data Provinsi Belum Tersedia</h2>
+          <p className="text-gray-700 dark:text-gray-300">Saat ini kami belum dapat memuat daftar provinsi.</p>
+        </motion.div>
       </div>
     );
   }
+  
+  const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+  const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } } };
 
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 py-16 bg-white dark:bg-slate-900">
-      
-      {/* Header Section with Search */}
-      <header className="text-center mb-12">
-        <Globe className="w-10 h-10 mx-auto text-amber-500 mb-3" />
-        <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white sm:text-5xl">
-          Jelajahi Kekayaan Budaya Nusantara
-        </h2>
-        <p className="text-lg text-slate-500 dark:text-slate-400 mt-3">
-          Menampilkan **{currentCount}** dari **{totalProvinces}** provinsi dengan kuis budaya eksklusif.
-        </p>
+    // PERUBAHAN WARNA: Gradien latar belakang yang lebih pekat/kontras
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-amber-100/50 dark:from-gray-900 dark:via-gray-950 dark:to-amber-950/20 relative overflow-hidden">
+      {/* Elemen Dekoratif Latar Belakang */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* PERUBAHAN WARNA: Warna blur lebih jenuh */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-300/30 dark:bg-amber-600/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/4 left-0 w-[600px] h-[600px] bg-yellow-300/30 dark:bg-yellow-600/10 rounded-full blur-3xl" />
+      </div>
 
-        {/* Search Input */}
-        <div className="mt-8 max-w-lg mx-auto">
-          <div className="relative">
-            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari provinsi (contoh: Papua Pegunungan)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition shadow-lg"
-            />
-          </div>
-        </div>
-      </header>
-      
-      {/* Grid Cards Section */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-      >
-        <AnimatePresence>
-          {filteredProvinces.length > 0 ? (
-            filteredProvinces.map((province) => {
-              const linkHref = `/${province.slug}`;
-              const cardColorClass = province.color || 'bg-slate-50/50 border-slate-300 dark:bg-slate-800/80 dark:border-slate-700';
+      <div className="container mx-auto px-6 py-16 sm:py-20 relative z-10">
+        {/* Hero Section */}
+        <motion.div
+          className="text-center mb-16"
+          initial={mounted ? "hidden" : false}
+          animate="visible"
+          variants={containerVariants}
+        >
+          <motion.div variants={itemVariants}>
+            {/* PERUBAHAN WARNA: Badge hero lebih solid */}
+            <Badge className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 dark:from-amber-500/30 dark:to-yellow-500/30 rounded-full mb-6 border border-amber-500/40 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 font-semibold shadow-xl backdrop-blur-sm">
+              <Globe className="w-5 h-5" />
+              Kekayaan Nusantara
+            </Badge>
+          </motion.div>
+          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+            {/* PERUBAHAN WARNA: Gradien teks lebih kontras */}
+            <span className="bg-gradient-to-r from-gray-950 via-gray-800 to-gray-950 dark:from-white dark:via-amber-50 dark:to-white bg-clip-text text-transparent">
+              Jelajahi Setiap Provinsi
+            </span>
+          </motion.h1>
+          <motion.p variants={itemVariants} className="text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Temukan keunikan budaya, sejarah, dan kearifan lokal dari{" "}
+            <span className="font-bold text-gray-900 dark:text-white">{provinceData.length}</span> provinsi di seluruh Indonesia.
+          </motion.p>
+          
+          <motion.div
+            variants={itemVariants}
+            className="mt-8 max-w-lg mx-auto flex flex-col sm:flex-row items-center gap-4"
+          >
+            <div className="relative w-full">
+              <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+              {/* PERUBAHAN WARNA: Input lebih kontras */}
+              <Input
+                type="text"
+                placeholder="Cari provinsi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 h-14 text-lg rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm focus:ring-2 focus:ring-amber-600 focus:border-amber-600 transition shadow-lg"
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                {/* PERUBAHAN WARNA: Tombol dropdown lebih kontras */}
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto h-14 px-5 text-md rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:border-amber-500 dark:hover:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all font-semibold shadow-lg"
+                >
+                  <ArrowDownUp className="w-4 h-4 mr-2" />
+                  <span>{currentSortLabel || "Urutkan"}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>Urutkan Berdasarkan</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setSortConfig({ key: "name", direction: "ascending" })}>
+                  <ArrowDownAZ className="mr-2 h-4 w-4" />
+                  <span>Nama (A-Z)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSortConfig({ key: "name", direction: "descending" })}>
+                  <ArrowUpZA className="mr-2 h-4 w-4" />
+                  <span>Nama (Z-A)</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setSortConfig({ key: "population", direction: "descending" })}>
+                  <ArrowDown10 className="mr-2 h-4 w-4" />
+                  <span>Populasi (Tertinggi)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setSortConfig({ key: "population", direction: "ascending" })}>
+                  <ArrowUp01 className="mr-2 h-4 w-4" />
+                  <span>Populasi (Terendah)</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
+        </motion.div>
 
-              return (
-                <motion.article
+        {/* Grid Provinsi */}
+        <motion.div
+          key={sortConfig.key + sortConfig.direction}
+          variants={containerVariants}
+          initial={mounted ? "hidden" : false}
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+        >
+          <AnimatePresence>
+            {sortedAndFilteredProvinces.length > 0 ? (
+              sortedAndFilteredProvinces.map((province) => (
+                <motion.div
                   key={province.slug}
                   variants={itemVariants}
-                  layout // Tambahkan layout untuk animasi filter yang halus
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  className="rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300"
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ y: -10 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="group h-full"
                 >
-                  <Link href={linkHref} className="block h-full">
-                    <Card className={`h-full border-2 ${cardColorClass} dark:shadow-2xl dark:shadow-slate-900/50`}>
-                      
-                      {/* Card Header (Province Name) */}
-                      <CardHeader className="p-6 pb-4 flex flex-row items-start justify-between">
-                        <CardTitle className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                  <Link href={`/${province.slug}`} className="block h-full">
+                    {/* PERUBAHAN WARNA: Kartu lebih kontras, shadow lebih kuat */}
+                    <Card className="h-full flex flex-col justify-between overflow-hidden border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:shadow-amber-500/20 dark:hover:shadow-amber-900/30 rounded-2xl transition-all duration-300 border border-gray-300/70 dark:border-gray-700/70 hover:border-amber-500/70 dark:hover:border-amber-700/70">
+                      <CardHeader className="flex flex-row items-start justify-between">
+                        <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white leading-tight group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
                           {province.name}
                         </CardTitle>
-                        <MapPin className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
+                        <MapPin className="w-6 h-6 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-1 group-hover:text-amber-600 transition-colors" />
                       </CardHeader>
-
-                      {/* Card Content (Details & Link) */}
-                      <CardContent className="p-6 pt-0 space-y-4">
-                        
-                        {/* Description */}
-                        <p className="text-sm text-slate-600 dark:text-slate-400 min-h-[50px]">
-                          {province.description || 
-                          "Detail deskripsi provinsi ini segera hadir. Jelajahi kuis kami!"}
-                        </p>
-
-                        {/* Population & Info */}
-                        <div className="flex items-center gap-6 border-t pt-4 border-slate-300/50 dark:border-slate-700">
-                            <div className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
-                                <Users className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />
-                                <span className="text-xs uppercase text-slate-500 dark:text-slate-400">Populasi:</span>
-                                <span className="font-bold ml-2 text-amber-600 dark:text-amber-400 text-base">
-                                  {province.population || '—'}
-                                </span>
-                            </div>
+                      <CardContent className="flex-grow flex flex-col justify-end">
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">
+                          <Users className="w-4 h-4" />
+                          <span>{province.population || "N/A"} Populasi</span>
                         </div>
-
-                        {/* Action Button */}
-                        <div className="mt-4">
-                          <span 
-                            className="w-full inline-flex items-center justify-center rounded-xl h-12 px-6 text-base font-semibold transition-colors 
-                                       bg-amber-500 text-white shadow-md shadow-amber-500/50 
-                                       hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 dark:shadow-amber-900/50"
-                            style={{
-                              '--color-primary-gold': '#f5bd02' 
-                            }}
-                          >
-                            Mulai Eksplorasi 
-                            <ArrowRight className="w-5 h-5 ml-2" />
-                          </span>
+                        <div className="mt-auto flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold group-hover:gap-3 transition-all">
+                          <span>Lihat Detail</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </div>
-                        
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.article>
-              );
-            })
-          ) : (
-            <motion.div
-                key="no-results"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="lg:col-span-4 text-center py-12 bg-slate-100 dark:bg-slate-800 rounded-xl shadow-inner border border-dashed border-slate-300 dark:border-slate-700"
-            >
-                <Info className="w-8 h-8 mx-auto mb-3 text-red-500" />
-                <p className="text-lg font-medium text-slate-700 dark:text-slate-300">
-                    Tidak ada provinsi yang cocok dengan pencarian "**{searchTerm}**".
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Coba kata kunci lain atau hapus filter.
-                </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </section>
+                </motion.div>
+              ))
+            ) : (
+              // PERUBAHAN WARNA: Empty state lebih jelas
+              <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sm:col-span-2 lg:col-span-3 xl:col-span-4 text-center py-12">
+                  <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700/50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md">
+                    <Search className="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tidak Ditemukan</h3>
+                  <p className="text-gray-700 dark:text-gray-300">Provinsi dengan kata kunci "{searchTerm}" tidak ada.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </div>
   );
-}
+};
+
+export default ProvincesList;
