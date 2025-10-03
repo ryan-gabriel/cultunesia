@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, UserPlus, Moon, Sun, Laptop, Sparkles } from "lucide-react";
+import { Menu, LogIn, Moon, Sun, Laptop, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +28,7 @@ const Navigation = () => {
     { label: "Blog", href: "/blogs" },
     { label: "Quiz", href: "/quizzes" },
     { label: "Leaderboard", href: "/leaderboard" },
-    { label: "Provinces", href: "#" },
+    { label: "Provinces", href: "/provinces" },
     { label: "About Us", href: "/about" },
   ];
 
