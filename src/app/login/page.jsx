@@ -100,6 +100,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { theme, setTheme } = useTheme();
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -114,19 +115,30 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          rememberMe, 
+        }),
       });
 
       const data = await res.json();
-      console.log(data);
 
       if (!res.ok) {
         setError(data.error);
       } else {
+        // 🔑 set session di Supabase
         await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
+
+        // 🔑 kalau rememberMe true, simpan di localStorage
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", "true");
+        } else {
+          localStorage.removeItem("rememberMe");
+        }
+
         if (data.role === "admin") {
           router.replace("/dashboard/provinces");
         } else {
@@ -303,6 +315,8 @@ export default function LoginPage() {
                 >
                   <input
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 text-amber-600 border-gray-300 dark:border-gray-600 rounded focus:ring-amber-500 focus:ring-offset-0 cursor-pointer transition-all"
                   />
                   <span className="text-gray-700 dark:text-gray-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">

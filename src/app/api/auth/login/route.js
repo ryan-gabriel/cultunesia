@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabaseServer";
 
 export async function POST(req) {
   try {
-    const { email, password } = await req.json();
+    const { email, password, rememberMe } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -14,7 +14,6 @@ export async function POST(req) {
 
     const supabase = createServerClient();
 
-    // 🔑 Login pakai Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -24,7 +23,6 @@ export async function POST(req) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // 🚨 pastikan email sudah terverifikasi
     if (!data.user.email_confirmed_at) {
       return NextResponse.json(
         { error: "Silakan verifikasi email sebelum login" },
@@ -34,31 +32,35 @@ export async function POST(req) {
 
     const { access_token, refresh_token } = data.session;
 
-    // 🔍 Ambil role dari profiles
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", data.user.id) // id user dari auth
+      .eq("id", data.user.id)
       .single();
-
-    if (profileError) {
-      console.error(profileError);
-      return NextResponse.json(
-        { error: "Gagal mengambil role user" },
-        { status: 500 }
-      );
-    }
 
     const response = NextResponse.json({
       message: "Login berhasil",
       user: data.user,
-      role: profile?.role || null, // role ikut dikirim
+      role: profile?.role || null,
       access_token,
       refresh_token,
     });
 
-    response.cookies.set("sb-access-token", access_token, { httpOnly: true });
-    response.cookies.set("sb-refresh-token", refresh_token, { httpOnly: true });
+    // ⏳ Tentukan expiry cookie
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    };
+
+    if (rememberMe) {
+      cookieOptions.maxAge = 60 * 60 * 24 * 30; // 30 hari
+    }
+    // kalau tidak ada rememberMe → session cookie (hilang saat browser ditutup)
+
+    response.cookies.set("sb-access-token", access_token, cookieOptions);
+    response.cookies.set("sb-refresh-token", refresh_token, cookieOptions);
 
     return response;
   } catch (err) {
