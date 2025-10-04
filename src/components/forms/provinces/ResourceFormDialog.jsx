@@ -93,6 +93,9 @@ export const ResourceFormDialog = ({
     .replace(/_/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
 
+  // Check for dark mode class on the document element for TinyMCE configuration
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains("dark");
+
   useEffect(() => {
     if (item) {
       setFormData(item);
@@ -194,7 +197,6 @@ export const ResourceFormDialog = ({
           method,
           body: form,
         });
-        
       }
 
       const json = await res.json();
@@ -205,10 +207,15 @@ export const ResourceFormDialog = ({
       setImageFile(null);
       setImagePreview(null);
       if (onSuccess) onSuccess(json[resource]);
+      toast("Success!", {
+        duration: 3000,
+        description: `${item ? 'Updated' : 'Added'} ${resourceName} successfully.`,
+      });
     } catch (err) {
       console.error(err);
       toast("Terjadi kesalahan!", {
         duration: 3000,
+        description: `Failed to save ${resourceName}. Please try again.`,
       });
     } finally {
       setLoading(false);
@@ -217,9 +224,9 @@ export const ResourceFormDialog = ({
 
   const renderImageField = () => (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold text-gray-700">
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
         Image{" "}
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
           (automatically converted to PNG)
         </span>
       </label>
@@ -228,8 +235,8 @@ export const ResourceFormDialog = ({
           dragActive
             ? "border-primary-gold bg-primary-gold/10"
             : imagePreview
-            ? "border-primary-gold bg-primary-gold/5"
-            : "border-gray-300 hover:border-primary-gold bg-gray-50"
+            ? "border-primary-gold bg-primary-gold/5 dark:bg-primary-gold/10"
+            : "border-gray-300 hover:border-primary-gold bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary-gold"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -239,7 +246,9 @@ export const ResourceFormDialog = ({
         {loading ? (
           <div className="flex flex-col items-center justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-primary-gold mb-2" />
-            <p className="text-sm text-gray-600">Converting to PNG...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Converting to PNG...
+            </p>
           </div>
         ) : imagePreview ? (
           <div className="relative">
@@ -264,13 +273,13 @@ export const ResourceFormDialog = ({
             <div className="p-4 bg-primary-gold/20 rounded-full mb-4">
               <Upload className="w-8 h-8 text-primary-gold" />
             </div>
-            <p className="text-lg font-medium text-gray-700 mb-2">
+            <p className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">
               Drop your image here
             </p>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               or click to browse files
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
               Supports: JPG, JPEG, PNG, WebP (auto-converted to PNG)
             </p>
           </div>
@@ -288,28 +297,28 @@ export const ResourceFormDialog = ({
 
   const renderTextField = (field) => (
     <div key={field} className="space-y-2">
-      <label className="block text-sm font-semibold text-gray-700">
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
         {fieldLabels[field] ||
           field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-        {field === "name" && <span className="text-red-500 ml-1">*</span>}
+        {(field === "name" || field === "fact") && <span className="text-red-500 ml-1">*</span>}
       </label>
       <Input
         name={field}
         value={formData[field] || ""}
         onChange={handleChange}
         placeholder={`Enter ${fieldLabels[field] || field.replace(/_/g, " ")}`}
-        className="border-gray-300 focus:border-primary-gold focus:ring-primary-gold rounded-lg"
-        required={field === "name"}
+        className="border-gray-300 focus:border-primary-gold focus:ring-primary-gold rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
+        required={field === "name" || field === "fact"}
       />
     </div>
   );
 
   const renderDescriptionField = () => (
     <div className="space-y-2">
-      <label className="block text-sm font-semibold text-gray-700">
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
         Description
       </label>
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
+      <div className="border border-gray-300 rounded-lg overflow-hidden dark:border-gray-700">
         <Editor
           apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
           value={formData.description || ""}
@@ -341,14 +350,36 @@ export const ResourceFormDialog = ({
               "bullist numlist outdent indent | removeformat",
               "link image media table | charmap | code preview fullscreen help",
             ].join(" | "),
+            
+            // --- KONFIGURASI DARK MODE TINYMCE ---
+            skin: isDarkMode ? "oxide-dark" : "oxide",
+            content_css: isDarkMode ? "dark" : "default",
+            
+            // --- KONTEN STYLE UNTUK MEMPERBAIKI HEADING (H1, H2, dst) ---
             content_style: `
+              /* Base content style for Light Mode */
               body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 font-size: 14px;
                 line-height: 1.6;
-                color: #374151;
+                color: #374151; /* Gray-700 */
                 margin: 1rem;
               }
+              h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+              h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+              h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+              
+              /* Dark Mode content style overrides */
+              ${isDarkMode ? `
+                body {
+                  background-color: #1f2937; /* Gray-800 */
+                  color: #e5e7eb; /* Gray-200 */
+                }
+                .mce-content-body {
+                   background-color: #1f2937 !important;
+                   color: #e5e7eb !important;
+                }
+              ` : ''}
             `,
             branding: false,
           }}
@@ -369,7 +400,7 @@ export const ResourceFormDialog = ({
       </DialogTrigger>
       {resource == "quizzes" && !item ? (
         <DialogContent
-          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
+          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl dark:bg-gray-800"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -387,7 +418,7 @@ export const ResourceFormDialog = ({
         </DialogContent>
       ) : (
         <DialogContent
-          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl"
+          className="sm:max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl dark:bg-gray-800"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -412,11 +443,13 @@ export const ResourceFormDialog = ({
               })}
             </div>
           </div>
-          <DialogFooter className="bg-gray-50 px-6 py-4 flex gap-3">
+          <DialogFooter 
+            className="bg-gray-50 px-6 py-4 flex gap-3 dark:bg-gray-700"
+          >
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
-              className="px-6 py-2 border-gray-300 hover:bg-gray-100"
+              className="px-6 py-2 border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-600"
               disabled={loading}
             >
               Cancel
@@ -425,10 +458,8 @@ export const ResourceFormDialog = ({
               onClick={handleSubmit}
               disabled={
                 loading ||
-                (!formData.name?.trim() &&
-                  !(resource == "quizzes") &&
-                  !formData.fact?.trim() &&
-                  resource == "funfacts")
+                ((resource !== "quizzes" && resource !== "funfacts") && !formData.name?.trim()) || 
+                (resource === "funfacts" && !formData.fact?.trim())
               }
               className="bg-primary-gold hover:bg-primary-gold/90 text-white px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
