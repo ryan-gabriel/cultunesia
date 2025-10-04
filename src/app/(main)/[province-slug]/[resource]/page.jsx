@@ -15,7 +15,8 @@ const allowed_resource = [
   "traditional_clothing",
 ];
 
-const Page = async ({ params }) => {
+const Page = async (context) => {
+  const params = await context.params;
   const provinceSlug = params["province-slug"];
   const resourceSlug = params["resource"];
 
