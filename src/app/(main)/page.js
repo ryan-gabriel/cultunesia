@@ -424,7 +424,7 @@ export default function Home() {
       <motion.div
         initial={false}
         animate={{ height: controlsExpanded ? "auto" : "56px" }}
-        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-xl border dark:border-gray-700 overflow-hidden"
+        className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-xl border-2 dark:border-gray-600 border-gray-500 overflow-hidden"
       >
         <button
           onClick={() => setControlsExpanded(!controlsExpanded)}

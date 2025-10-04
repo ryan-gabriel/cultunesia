@@ -3,14 +3,15 @@
 import Navbar from "@/components/Navbar/Navbar";
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card"; // Tidak terpakai, bisa dihapus
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Loader2, Bot, User } from "lucide-react"; 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { Send, Loader2, Bot, User } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import Image from "next/image";
 
 // --- Konstanta dan Tipe Data ---
 
@@ -32,12 +33,12 @@ const INITIAL_MESSAGES = [
   {
     role: "system",
     content: `Anda adalah "Bot Cultunesia", sebuah bot edukasi yang dikhususkan untuk menjawab pertanyaan seputar kekayaan budaya Indonesia. 
-      Tugas Anda adalah:
-      1. Jawab SEMUA pertanyaan pengguna hanya mengenai topik Budaya Indonesia, seperti: nama provinsi, suku, makanan tradisional, bahasa daerah, tempat wisata budaya, tarian, dan baju tradisional Indonesia.
-      2. Jika pertanyaan TIDAK berhubungan dengan budaya Indonesia, balas dengan sopan bahwa topik tersebut di luar lingkup pengetahuan Anda.
-      3. JANGAN PERNAH menyebut diri Anda sebagai Groq, bot AI generik, atau model bahasa. Perkenalkan diri Anda sebagai "Bot Cultunesia" jika ditanya siapa Anda.
-      4. Jawab dengan antusias, informatif, dan dalam Bahasa Indonesia yang formal namun mudah dipahami.
-      Model yang Anda gunakan adalah llama-3.1-8b-instant.`,
+     Tugas Anda adalah:
+     1. Jawab SEMUA pertanyaan pengguna hanya mengenai topik Budaya Indonesia, seperti: nama provinsi, suku, makanan tradisional, bahasa daerah, tempat wisata budaya, tarian, dan baju tradisional Indonesia.
+     2. Jika pertanyaan TIDAK berhubungan dengan budaya Indonesia, balas dengan sopan bahwa topik tersebut di luar lingkup pengetahuan Anda.
+     3. JANGAN PERNAH menyebut diri Anda sebagai Groq, bot AI generik, atau model bahasa. Perkenalkan diri Anda sebagai "Bot Cultunesia" jika ditanya siapa Anda.
+     4. Jawab dengan antusias, informatif, dan dalam Bahasa Indonesia yang formal namun mudah dipahami.
+     Model yang Anda gunakan adalah llama-3.1-8b-instant.`,
   },
   {
     role: "assistant",
@@ -50,36 +51,47 @@ const INITIAL_MESSAGES = [
 
 /**
  * Komponen untuk menampilkan satu pesan dalam chat dengan desain modern.
- * (Tidak ada perubahan pada ChatMessage, karena sudah benar)
  */
+
 const ChatMessage = ({ message }) => {
+  // Hanya menampilkan pesan role 'user' dan 'assistant'
+  if (message.role === 'system') return null; 
+
   const isUser = message.role === "user";
 
+  // Penyesuaian rounded corner agar lebih modern
   const messageClasses = isUser
-    ? "bg-primary-gold text-white shadow-xl rounded-br-lg"
-    : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-lg border border-gray-100 dark:border-gray-600 rounded-tl-lg";
+    ? "bg-primary-gold text-white shadow-xl rounded-2xl rounded-tr-sm" // Rounded tr-sm agar lebih terlihat "ujung runcing" di dekat avatar
+    : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-lg border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm"; // Rounded tl-sm
 
   const alignmentClasses = isUser ? "justify-end" : "justify-start";
 
   const avatar = isUser ? (
     <Avatar className="w-8 h-8 flex-shrink-0">
-      <AvatarFallback className="bg-gray-200 dark:bg-gray-600 text-primary-gold">
+      <AvatarFallback className="bg-gray-200 border dark:bg-gray-600 text-primary-gold">
         <User className="w-4 h-4" />
       </AvatarFallback>
     </Avatar>
   ) : (
-    <Avatar className="w-8 h-8 flex-shrink-0">
-      <AvatarFallback className="bg-primary-gold text-white">CN</AvatarFallback>
-    </Avatar>
+    <div className="w-8 h-8 flex justify-center items-center flex-shrink-0 rounded-full overflow-hidden bg-white dark:bg-gray-700 border">
+      {/* Pastikan Logo Short.svg ada di folder public */}
+      <Image
+        src="/Logo Short.svg" 
+        alt="Cultunesia Logo"
+        width={20}
+        height={20}
+        className="object-contain"
+      />
+    </div>
   );
 
   return (
     <div
-      className={`flex items-start gap-3 ${alignmentClasses} animate-in fade-in slide-in-from-bottom-1 duration-300`}
+      className={`flex items-start gap-3 ${alignmentClasses} animate-in fade-in slide-in-from-bottom-1 duration-300 mx-4`} // Menambahkan mx-4 untuk padding samping
     >
       {!isUser && avatar}
       <div
-        className={`px-4 py-3 rounded-2xl text-sm max-w-[75%] transition-all ${messageClasses}`}
+        className={`px-4 py-3 text-sm max-w-[75%] transition-all ${messageClasses}`}
       >
         <p
           className={`font-bold text-xs mb-1 ${
@@ -88,7 +100,7 @@ const ChatMessage = ({ message }) => {
         >
           {isUser ? "Anda" : "Cultunesia"}
         </p>
-        <div className="prose dark:prose-invert max-w-none">
+        <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed"> {/* Penyesuaian text size di dalam prose */}
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {message.content}
           </ReactMarkdown>
@@ -107,16 +119,15 @@ const GroqChatbot = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const chatAreaRef = useRef(null);
+  // Perubahan: Menggunakan div sebagai ref untuk ScrollArea
+  const chatAreaRef = useRef(null); 
 
   // Auto-scroll ke bawah saat pesan bertambah
   useEffect(() => {
     if (chatAreaRef.current) {
       setTimeout(() => {
-        chatAreaRef.current.scrollTo({
-          top: chatAreaRef.current.scrollHeight,
-          behavior: "smooth",
-        });
+        // Menggunakan properti scrollHeight dan scrollTop dari elemen div
+        chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
       }, 100);
     }
   }, [messages]);
@@ -128,9 +139,11 @@ const GroqChatbot = () => {
     if (!input.trim() || loading) return;
 
     const userMessage = { role: "user", content: input.trim() };
+    // Filter out system message to ensure only visible messages update the UI immediately
+    const messagesToShow = messages.filter(msg => msg.role !== 'system');
     const newMessages = [...messages, userMessage];
 
-    setMessages(newMessages);
+    setMessages(newMessages); // Set state with all messages (including system)
     setInput("");
     setLoading(true);
 
@@ -168,13 +181,32 @@ const GroqChatbot = () => {
           duration: 5000,
         });
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            role: "assistant",
-            content: `[Gagal] Kesalahan dari server proxy. Cek konsol browser untuk detail error.`,
-          },
-        ]);
+        // Pastikan kita menambahkannya ke state messages
+        setMessages((prevMessages) => {
+           // Temukan index pesan user yang baru saja dikirim
+           const userMsgIndex = prevMessages.findIndex(m => m.content === userMessage.content && m.role === 'user');
+           
+           // Jika ditemukan, pastikan error message ditambahkan setelahnya
+           if (userMsgIndex !== -1) {
+              return [
+                ...prevMessages,
+                {
+                  role: "assistant",
+                  content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(0, 100)}... Cek konsol browser untuk detail error.`,
+                },
+              ];
+           } else {
+             // Fallback jika pesan user tidak ditemukan (meski seharusnya tidak terjadi)
+             return [
+               ...prevMessages,
+               { role: "user", content: userMessage.content },
+               {
+                  role: "assistant",
+                  content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(0, 100)}... Cek konsol browser untuk detail error.`,
+               },
+             ];
+           }
+        });
         return;
       }
 
@@ -185,8 +217,7 @@ const GroqChatbot = () => {
       console.error("Gagal koneksi Server/API Route:", error);
 
       toast.error("Kesalahan Jaringan", {
-        description:
-          "Gagal terhubung ke server. Cek koneksi internet Anda.",
+        description: "Gagal terhubung ke server. Cek koneksi internet Anda.",
         duration: 5000,
       });
 
@@ -205,15 +236,19 @@ const GroqChatbot = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen flex justify-center items-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-950 transition-colors duration-500">
-        <Card className="w-full max-w-2xl h-full sm:h-[80vh] flex flex-col shadow-2xl rounded-3xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-shadow duration-500">
-          {/* Header yang Ditingkatkan: Modern & Informatif */}
-          <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-4 pt-6 flex flex-row items-center justify-between">
+      {/* Kontainer Utama: Menggunakan h-screen/min-h-[90vh] untuk memastikan tinggi penuh */}
+      <div className="flex w-full min-h-screen bg-white dark:bg-gray-950 justify-center items-start p-4 sm:p-6 transition-colors duration-500 -mb-20">
+        {/* Chat Card: Menggunakan tinggi yang responsif */}
+        <div className="w-full max-w-3xl h-full min-h-[90vh] sm:min-h-[85vh] lg:h-[85vh] flex flex-col shadow-2xl rounded-3xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-shadow duration-500">
+          
+          {/* Header */}
+          <div className="border-b border-gray-100 dark:border-gray-800 p-4 sm:p-6 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <Bot className="w-6 h-6 text-primary-gold animate-bounce-slow" />
               <h1 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50">
                 Cultunesia Bot{" "}
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline"> 
+                  {/* Menyembunyikan di layar sangat kecil */}
                   | Budaya Indonesia
                 </span>
               </h1>
@@ -224,15 +259,16 @@ const GroqChatbot = () => {
                 Mengetik...
               </div>
             )}
-          </CardHeader>
+          </div>
 
-          {/* Area Chat Utama */}
-          <CardContent className="flex flex-col flex-grow p-0">
+          {/* Area Chat Utama: Flex Grow untuk mengisi sisa ruang */}
+          <div className="flex flex-col flex-grow min-h-0">
+            {/* ScrollArea: flex-grow dan min-h-0 sangat penting di sini */}
             <ScrollArea
               ref={chatAreaRef}
-              className="flex-grow rounded-b-3xl p-6 bg-gray-50 dark:bg-gray-800 transition-colors duration-300"
+              className="flex-grow min-h-0 p-0 bg-gray-50 dark:bg-gray-800 transition-colors duration-300"
             >
-              <div className="space-y-4">
+              <div className="space-y-4 py-4"> {/* Menambahkan padding vertikal di dalam scrollarea */}
                 {messages.map(
                   (msg, index) =>
                     msg.role !== "system" && (
@@ -242,8 +278,8 @@ const GroqChatbot = () => {
               </div>
             </ScrollArea>
 
-            {/* Input dan Tombol Kirim: Smooth & Interaktif */}
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-b-3xl">
+            {/* Input dan Tombol Kirim */}
+            <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-b-3xl">
               <div className="flex items-center gap-3">
                 <Input
                   type="text"
@@ -257,7 +293,7 @@ const GroqChatbot = () => {
                 <Button
                   onClick={sendMessage}
                   disabled={loading || !input.trim()}
-                  className="w-12 h-12 rounded-xl bg-primary-gold text-white hover:bg-yellow-700 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-12 h-12 rounded-xl bg-primary-gold text-white hover:bg-yellow-700 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -267,8 +303,8 @@ const GroqChatbot = () => {
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </>
   );
