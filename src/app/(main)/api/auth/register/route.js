@@ -56,6 +56,8 @@ export async function POST(req) {
       },
     ]);
 
+    console.log(avatarUrl);
+
     if (dbError) {
       return NextResponse.json({ error: dbError.message }, { status: 400 });
     }
