@@ -13,148 +13,187 @@ import {
   Settings,
   ChevronUp,
   ChevronDown,
-  List, // Import List icon for the new link
+  List, // Used for the new link
 } from "lucide-react";
 import Link from "next/link"; // Import Link for navigation
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { TooltipProvider } from "@/components/ui/tooltip";
+// Removed Sheet imports as they are no longer strictly needed for the link
 import MapSvg from "@/components/MapSvg";
+
+// --- 🗺️ MAP CONSTANTS ---
+const MAP_WIDTH = 1875.5;
+const MAP_HEIGHT = 1000;
+const MIN_SCALE_ZOOM = 0.1;
+const MAX_SCALE_ZOOM = 10;
+const ZOOM_FACTOR = 1.3;
 
 export default function Home() {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [controlsExpanded, setControlsExpanded] = useState(false);
+
+  // Refs for DOM elements and interaction state
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const isDragging = useRef(false);
-  const startPos = useRef({ x: 0, y: 0 });
+  const startMousePos = useRef({ x: 0, y: 0 });
+  const startMapPos = useRef({ x: 0, y: 0 });
   const lastTouchDistance = useRef(0);
   const animationFrameId = useRef(null);
 
-  const mapWidth = 1875.5;
-  const mapHeight = 1000;
+  // Use a ref for container dimensions to access them inside callbacks
+  const containerDims = useRef({ width: 0, height: 0 });
 
-  // Prevent pull-to-refresh on mobile
-  useEffect(() => {
-    const preventPullToRefresh = (e) => {
-      if (e.touches.length === 1 && mapRef.current?.contains(e.target)) {
-        e.preventDefault();
-      }
-    };
-    const preventOverscroll = (e) => {
-      if (mapRef.current?.contains(e.target)) {
-        e.preventDefault();
-      }
-    };
-    document.addEventListener("touchstart", preventPullToRefresh, {
-      passive: false,
-    });
-    document.addEventListener("touchmove", preventOverscroll, {
-      passive: false,
-    });
-    document.body.style.overscrollBehavior = "none";
-    return () => {
-      document.removeEventListener("touchstart", preventPullToRefresh);
-      document.removeEventListener("touchmove", preventOverscroll);
-      document.body.style.overscrollBehavior = "auto";
+  // --- CORE ALGORITHM: FIT-TO-CONTAINER & CLAMPING ---
+
+  const calculateFitParams = useCallback((containerWidth, containerHeight) => {
+    const scaleX = containerWidth / MAP_WIDTH;
+    const scaleY = containerHeight / MAP_HEIGHT;
+    const fitScale = Math.min(scaleX, scaleY);
+
+    const scaledMapWidth = MAP_WIDTH * fitScale;
+    const scaledMapHeight = MAP_HEIGHT * fitScale;
+
+    const offsetX = (containerWidth - scaledMapWidth) / 2;
+    const offsetY = (containerHeight - scaledMapHeight) / 2;
+
+    return {
+      scale: fitScale,
+      position: { x: offsetX, y: offsetY },
     };
   }, []);
+
+  const clampPosition = useCallback(
+    (currentPosition, currentScale, containerWidth, containerHeight) => {
+      const scaledMapWidth = MAP_WIDTH * currentScale;
+      const scaledMapHeight = MAP_HEIGHT * currentScale;
+
+      // Limits
+      const maxPosX = Math.max(0, (containerWidth - scaledMapWidth) / 2);
+      const minPosX = Math.min(0, containerWidth - scaledMapWidth);
+      const maxPosY = Math.max(0, (containerHeight - scaledMapHeight) / 2);
+      const minPosY = Math.min(0, containerHeight - scaledMapHeight);
+
+      // Clamping
+      const clampedX = Math.max(minPosX, Math.min(maxPosX, currentPosition.x));
+      const clampedY = Math.max(minPosY, Math.min(maxPosY, currentPosition.y));
+
+      return { x: clampedX, y: clampedY };
+    },
+    []
+  );
 
   // 🛠️ Check screen size and set initial map position/scale
   useEffect(() => {
-    const checkScreenSize = () => {
+    const setInitialState = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
 
-      if (mobile) {
-        // --- 🎯 CHANGE 1: Set initial scale to 1 (100%) on mobile ---
-        const containerWidth = window.innerWidth;
-        const containerHeight = window.innerHeight;
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        containerDims.current = {
+          width: containerWidth,
+          height: containerHeight,
+        };
 
-        const targetScale = 1; // Always start at 100% zoom (1)
-        setScale(targetScale);
+        const { scale: initialScale, position: initialPosition } =
+          calculateFitParams(containerWidth, containerHeight);
 
-        const scaledMapWidth = mapWidth * targetScale;
-        const scaledMapHeight = mapHeight * targetScale;
-
-        // Center the map, which will likely push the edges off-screen
-        const offsetX = (containerWidth - scaledMapWidth) / 2;
-        const offsetY = (containerHeight - scaledMapHeight) / 2;
-
-        setPosition({ x: offsetX, y: offsetY });
-      } else {
-        setScale(1);
-        setPosition({ x: 0, y: 0 });
+        setScale(initialScale);
+        setPosition(initialPosition);
       }
     };
 
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
+    const timeoutId = setTimeout(setInitialState, 100);
 
-  const smoothSetScale = useCallback((newScale) => {
-    if (animationFrameId.current)
-      cancelAnimationFrame(animationFrameId.current);
-    setScale(newScale);
-  }, []);
+    window.addEventListener("resize", setInitialState);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", setInitialState);
+    };
+  }, [calculateFitParams]);
 
-  const smoothSetPosition = useCallback((newPosition) => {
-    if (animationFrameId.current)
-      cancelAnimationFrame(animationFrameId.current);
-    setPosition(newPosition);
-  }, []);
+  // --- Panning and Zooming Handlers ---
+
+  const smoothSetPosition = useCallback(
+    (newPosition) => {
+      const { width, height } = containerDims.current;
+      const clampedPosition = clampPosition(newPosition, scale, width, height);
+
+      if (animationFrameId.current)
+        cancelAnimationFrame(animationFrameId.current);
+      setPosition(clampedPosition);
+    },
+    [scale, clampPosition]
+  );
+
+  const smoothSetScale = useCallback(
+    (newScale) => {
+      if (animationFrameId.current)
+        cancelAnimationFrame(animationFrameId.current);
+
+      const clampedScale = Math.max(
+        MIN_SCALE_ZOOM,
+        Math.min(newScale, MAX_SCALE_ZOOM)
+      );
+
+      setScale(clampedScale);
+
+      const { width, height } = containerDims.current;
+      setPosition((prevPos) =>
+        clampPosition(prevPos, clampedScale, width, height)
+      );
+    },
+    [clampPosition]
+  );
+
+  const handleZoom = useCallback(
+    (zoom, center) => {
+      const newScale = Math.min(
+        Math.max(scale * zoom, MIN_SCALE_ZOOM),
+        MAX_SCALE_ZOOM
+      );
+
+      const rect = mapRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const zoomPointX = center ? center.x - rect.left : rect.width / 2;
+      const zoomPointY = center ? center.y - rect.top : rect.height / 2;
+
+      const scaleChange = newScale / scale;
+      const newX = position.x - (zoomPointX - position.x) * (scaleChange - 1);
+      const newY = position.y - (zoomPointY - position.y) * (scaleChange - 1);
+
+      smoothSetScale(newScale);
+      smoothSetPosition({ x: newX, y: newY });
+    },
+    [scale, position, smoothSetScale, smoothSetPosition]
+  );
 
   const handleZoomIn = useCallback(() => {
-    smoothSetScale((prev) => Math.min(prev * 1.3, 10));
-  }, [smoothSetScale]);
+    handleZoom(ZOOM_FACTOR);
+  }, [handleZoom]);
 
   const handleZoomOut = useCallback(() => {
-    // Keep minimum scale for mobile at a reasonable value, even if initial is 1
-    const minScale = isMobile ? 0.2 : 0.5;
-    smoothSetScale((prev) => Math.max(prev / 1.3, minScale));
-  }, [isMobile, smoothSetScale]);
+    handleZoom(1 / ZOOM_FACTOR);
+  }, [handleZoom]);
 
-  // 🛠️ Reset ulang sesuai mode (Adjusted for new mobile scale logic)
   const handleReset = useCallback(() => {
-    if (isMobile) {
-      // --- 🎯 CHANGE 2: Set reset scale to 1 (100%) on mobile ---
-      const containerWidth = window.innerWidth;
-      const containerHeight = window.innerHeight;
-      
-      const targetScale = 1; // Reset to 100% zoom
-      smoothSetScale(targetScale);
+    const { width, height } = containerDims.current;
+    const { scale: resetScale, position: resetPosition } = calculateFitParams(
+      width,
+      height
+    );
 
-      const scaledMapWidth = mapWidth * targetScale;
-      const scaledMapHeight = mapHeight * targetScale;
-      
-      // Center position
-      const offsetX = (containerWidth - scaledMapWidth) / 2;
-      const offsetY = (containerHeight - scaledMapHeight) / 2;
-
-      smoothSetPosition({ x: offsetX, y: offsetY });
-    } else {
-      smoothSetScale(1);
-      smoothSetPosition({ x: 0, y: 0 });
-    }
-  }, [isMobile, smoothSetScale, smoothSetPosition]);
+    smoothSetScale(resetScale);
+    smoothSetPosition(resetPosition);
+  }, [calculateFitParams, smoothSetScale, smoothSetPosition]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -175,52 +214,66 @@ export default function Home() {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
+      // Recalculate layout on fullscreen change
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        containerDims.current = {
+          width: containerWidth,
+          height: containerHeight,
+        };
+        const { scale: newScale, position: newPosition } = calculateFitParams(
+          containerWidth,
+          containerHeight
+        );
+        setScale(newScale);
+        setPosition(newPosition);
+      }
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
+  }, [calculateFitParams]);
 
-  const handleWheel = useCallback(
-    (e) => {
-      if (isMobile) return;
-
-      e.preventDefault();
-      const rect = mapRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const zoomIntensity = 0.1;
-      const wheel = e.deltaY < 0 ? 1 : -1;
-      const zoom = Math.exp(wheel * zoomIntensity);
-
-      const newScale = Math.min(Math.max(scale * zoom, 0.5), 10);
-
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const scaleChange = newScale / scale;
-      const newX = position.x - (mouseX - position.x) * (scaleChange - 1);
-      const newY = position.y - (mouseY - position.y) * (scaleChange - 1);
-
-      smoothSetScale(newScale);
-      smoothSetPosition({ x: newX, y: newY });
-    },
-    [scale, position, isMobile, smoothSetScale, smoothSetPosition]
-  );
+  // --- Mouse & Touch Interaction (Same as before) ---
 
   const handleMouseDown = (e) => {
     if (e.target.closest('g[class*="province"]')) return;
 
     isDragging.current = true;
-    startPos.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
+    startMousePos.current = { x: e.clientX, y: e.clientY };
+    startMapPos.current = position;
     if (mapRef.current) {
       mapRef.current.style.cursor = "grabbing";
     }
     e.preventDefault();
   };
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+
+      const dx = e.clientX - startMousePos.current.x;
+      const dy = e.clientY - startMousePos.current.y;
+
+      const newPosition = {
+        x: startMapPos.current.x + dx,
+        y: startMapPos.current.y + dy,
+      };
+
+      smoothSetPosition(newPosition);
+    },
+    [smoothSetPosition]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+    if (mapRef.current) {
+      mapRef.current.style.cursor = "grab";
+    }
+    smoothSetPosition(position); // Clamp one last time
+  }, [position, smoothSetPosition]);
 
   const getTouchDistance = (touches) => {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -232,82 +285,66 @@ export default function Home() {
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       isDragging.current = true;
-      startPos.current = {
-        x: touch.clientX - position.x,
-        y: touch.clientY - position.y,
-      };
+      startMousePos.current = { x: touch.clientX, y: touch.clientY };
+      startMapPos.current = position;
     } else if (e.touches.length === 2) {
-      // Pinch zoom start
       isDragging.current = false;
       lastTouchDistance.current = getTouchDistance(e.touches);
     }
   };
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isDragging.current) return;
-      e.preventDefault();
-
-      smoothSetPosition({
-        x: e.clientX - startPos.current.x,
-        y: e.clientY - startPos.current.y,
-      });
-    },
-    [smoothSetPosition]
-  );
-
   const handleTouchMove = useCallback(
     (e) => {
-      e.preventDefault(); // Prevent pull-to-refresh
+      e.preventDefault();
 
       if (e.touches.length === 1 && isDragging.current) {
         const touch = e.touches[0];
-        smoothSetPosition({
-          x: touch.clientX - startPos.current.x,
-          y: touch.clientY - startPos.current.y,
-        });
+        const dx = touch.clientX - startMousePos.current.x;
+        const dy = touch.clientY - startMousePos.current.y;
+
+        const newPosition = {
+          x: startMapPos.current.x + dx,
+          y: startMapPos.current.y + dy,
+        };
+
+        smoothSetPosition(newPosition);
       } else if (e.touches.length === 2) {
-        // Pinch zoom
         const currentDistance = getTouchDistance(e.touches);
-        const distanceChange = currentDistance - lastTouchDistance.current;
 
-        if (Math.abs(distanceChange) > 5) {
+        if (Math.abs(currentDistance - lastTouchDistance.current) > 5) {
           const zoomFactor = currentDistance / lastTouchDistance.current;
-          const newScale = Math.min(Math.max(scale * zoomFactor, 0.2), 10);
 
-          // Zoom towards the center of the two touches
           const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
           const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-          const rect = mapRef.current?.getBoundingClientRect();
 
-          if (rect) {
-            const relX = centerX - rect.left;
-            const relY = centerY - rect.top;
-
-            const scaleChange = newScale / scale;
-            const newX = position.x - (relX - position.x) * (scaleChange - 1);
-            const newY = position.y - (relY - position.y) * (scaleChange - 1);
-
-            smoothSetScale(newScale);
-            smoothSetPosition({ x: newX, y: newY });
-          }
+          handleZoom(zoomFactor, { x: centerX, y: centerY });
 
           lastTouchDistance.current = currentDistance;
         }
       }
     },
-    [scale, position, smoothSetScale, smoothSetPosition]
+    [handleZoom, smoothSetPosition]
   );
 
-  const handleMouseUp = useCallback(() => {
-    isDragging.current = false;
-    if (mapRef.current) {
-      mapRef.current.style.cursor = "grab";
-    }
-  }, []);
+  const handleWheel = useCallback(
+    (e) => {
+      e.preventDefault();
 
-  // Keyboard navigation
+      const rect = mapRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const wheel = e.deltaY < 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR;
+
+      const center = { x: e.clientX, y: e.clientY };
+
+      handleZoom(wheel, center);
+    },
+    [handleZoom]
+  );
+
+  // Keyboard navigation and Wheel listener (Same as before)
   useEffect(() => {
+    // ... (keyboard logic)
     if (isMobile) return;
 
     const handleKeyDown = (e) => {
@@ -334,7 +371,6 @@ export default function Home() {
           toggleFullscreen();
           break;
         case "Escape":
-          setShowInfo(false);
           setControlsExpanded(false);
           if (document.fullscreenElement) {
             document.exitFullscreen();
@@ -347,7 +383,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleReset, handleZoomIn, handleZoomOut, isMobile, toggleFullscreen]);
 
-  // Mouse wheel listener
   useEffect(() => {
     const mapElement = mapRef.current;
     if (mapElement && !isMobile) {
@@ -358,7 +393,32 @@ export default function Home() {
 
   const zoomLevel = Math.round(scale * 100);
 
-  // Mobile Controls Component
+  // --- NEW COMPONENT: MobileProvinceLink (Top-left button) ---
+  const MobileProvinceLink = () => (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.6 }}
+      className="absolute top-4 left-4 z-30" // Positioned at top-left
+    >
+      <Link href="/provinces" passHref>
+        <Button
+          size="lg"
+          className="h-12 px-5 font-semibold rounded-xl shadow-lg backdrop-blur-md 
+               bg-primary-gold text-white 
+               hover:brightness-90 
+               dark:bg-primary-gold
+               dark:hover:brightness-110"
+        >
+          <List className="w-5 h-5 mr-2" />
+          <span>Daftar Provinsi</span>
+        </Button>
+      </Link>
+    </motion.div>
+  );
+
+  // --- Components (MobileControls and DesktopControls remain as is) ---
+
   const MobileControls = () => (
     <div className="fixed bottom-4 right-4 z-30">
       <motion.div
@@ -396,7 +456,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   onClick={handleZoomOut}
-                  disabled={scale <= 0.2}
+                  disabled={scale <= MIN_SCALE_ZOOM}
                   variant="outline"
                   className="h-12 flex flex-col gap-1 text-xs dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                 >
@@ -415,7 +475,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   onClick={handleZoomIn}
-                  disabled={scale >= 10}
+                  disabled={scale >= MAX_SCALE_ZOOM}
                   className="h-12 bg-primary-gold hover:bg-primary-gold/90 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black flex flex-col gap-1 text-xs"
                 >
                   <ZoomIn className="w-4 h-4" />
@@ -451,7 +511,6 @@ export default function Home() {
     </div>
   );
 
-  // Desktop Controls Component
   const DesktopControls = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -466,7 +525,7 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={handleZoomIn}
-                disabled={scale >= 10}
+                disabled={scale >= MAX_SCALE_ZOOM}
                 className="bg-primary-gold hover:bg-primary-gold/90 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black w-10 h-10 p-0"
               >
                 <ZoomIn className="w-4 h-4" />
@@ -474,7 +533,7 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={handleZoomOut}
-                disabled={scale <= 0.5}
+                disabled={scale <= MIN_SCALE_ZOOM}
                 className="bg-primary-gold hover:bg-primary-gold/90 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-black w-10 h-10 p-0"
               >
                 <ZoomOut className="w-4 h-4" />
@@ -516,18 +575,6 @@ export default function Home() {
     </motion.div>
   );
 
-  // New Mobile Tip/Link Component
-  const MobileProvinceTip = () => (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.3, duration: 0.6 }}
-      className="absolute bottom-4 left-4 z-30"
-    >
-      
-    </motion.div>
-  );
-
   return (
     <>
       <Navbar />
@@ -541,15 +588,18 @@ export default function Home() {
             ref={containerRef}
             className="relative h-screen transition-all duration-500"
           >
-            {isMobile ? (
+            {/* Conditional Mobile Components */}
+            {isMobile && !isFullscreen ? (
               <>
+                {/* NEW LINK: Appears on mobile, outside of fullscreen */}
+                <MobileProvinceLink />
                 <MobileControls />
-                <MobileProvinceTip /> {/* Add the new mobile tip */}
               </>
             ) : (
               <DesktopControls />
             )}
 
+            {/* Desktop Zoom/Info Display */}
             {!isMobile && !isFullscreen && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -570,6 +620,7 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* Map Container */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -588,6 +639,7 @@ export default function Home() {
               tabIndex={0}
               style={{ touchAction: "none" }}
             >
+              {/* Grid Background */}
               {!isMobile && (
                 <div className="absolute inset-0 opacity-5 dark:opacity-10">
                   <div
@@ -600,11 +652,12 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Transformable Map SVG */}
               <motion.div
-                className="w-full h-full"
+                className="w-[1875.5px] h-[1000px] bg-red-500/0 absolute top-0 left-0"
                 style={{
                   transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
-                  transformOrigin: "center center",
+                  transformOrigin: "top left",
                   willChange: "transform",
                 }}
                 transition={{
@@ -617,6 +670,7 @@ export default function Home() {
                 <MapSvg />
               </motion.div>
 
+              {/* Initial Loading Overlay */}
               <motion.div
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
