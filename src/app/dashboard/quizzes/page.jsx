@@ -10,7 +10,6 @@ import {
   Loader2,
   Search,
   HelpCircle,
-  Map,
   Calendar,
 } from "lucide-react"; // Impor ikon
 import Link from "next/link";
@@ -23,11 +22,18 @@ const LoadingState = () => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 text-gray-500 bg-white rounded-xl shadow-inner py-12"
+    // Dark mode classes added: bg-white -> dark:bg-gray-800, text-gray-500 -> dark:text-gray-400
+    className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-inner py-12"
   >
     <Loader2 className="w-8 h-8 animate-spin mb-4 text-yellow-600" />
-    <p className="text-lg font-medium">Memuat data kuis...</p>
-    <p className="text-sm text-gray-400 mt-1">Mohon tunggu sebentar.</p>
+    {/* text-gray-500 (implied) -> dark:text-gray-200 for emphasis */}
+    <p className="text-lg font-medium dark:text-gray-200">
+      Memuat data kuis...
+    </p>
+    {/* text-gray-400 -> dark:text-gray-500 */}
+    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+      Mohon tunggu sebentar.
+    </p>
   </motion.div>
 );
 
@@ -35,7 +41,8 @@ const ErrorState = ({ message }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-red-50 border border-red-200 rounded-xl text-red-700 p-8 text-center"
+    // Dark mode classes added: bg-red-50 -> dark:bg-red-950, border-red-200 -> dark:border-red-800, text-red-700 -> dark:text-red-300
+    className="flex flex-col items-center justify-center h-64 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 p-8 text-center"
   >
     <AlertCircle className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Terjadi Kesalahan</p>
@@ -49,7 +56,8 @@ const EmptyState = () => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 p-8 text-center"
+    // Dark mode classes added: bg-gray-50 -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700, text-gray-500 -> dark:text-gray-400
+    className="flex flex-col items-center justify-center h-64 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 p-8 text-center"
   >
     <HelpCircle className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Belum Ada Kuis</p>
@@ -142,18 +150,24 @@ const Page = () => {
   if (!session) return null;
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
+    // Dark mode added: bg-gray-50 -> dark:bg-gray-900
+    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header Halaman */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+          className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
         >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manajemen Kuis</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            {/* text-gray-900 -> dark:text-gray-100 */}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Manajemen Kuis
+            </h1>
+            {/* text-gray-600 -> dark:text-gray-400 */}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Buat dan kelola kuis interaktif untuk provinsi dan tantangan
               harian.
             </p>
@@ -173,19 +187,35 @@ const Page = () => {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8"
         >
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+          {/* Card Total Kuis */}
+          <div
+            // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between"
+          >
             <div>
-              <p className="text-sm text-gray-500 font-medium">Total Kuis</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">
+              {/* text-gray-500 -> dark:text-gray-400 */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                Total Kuis
+              </p>
+              {/* text-gray-900 -> dark:text-gray-100 */}
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {stats.total}
               </h2>
             </div>
             <HelpCircle className="w-10 h-10 text-yellow-500 opacity-60" />
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+          {/* Card Kuis Harian */}
+          <div
+            // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between"
+          >
             <div>
-              <p className="text-sm text-gray-500 font-medium">Kuis Harian</p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">
+              {/* text-gray-500 -> dark:text-gray-400 */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                Kuis Harian
+              </p>
+              {/* text-gray-900 -> dark:text-gray-100 */}
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {stats.daily}
               </h2>
             </div>
@@ -198,24 +228,28 @@ const Page = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row items-center gap-4"
+          // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+          className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-4"
         >
           <div className="relative flex-grow w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              {/* text-gray-400 -> dark:text-gray-500 */}
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
             <input
               type="text"
               placeholder="Cari kuis berdasarkan judul..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-gray-900 transition-all"
+              // Dark mode classes added: bg-white -> dark:bg-gray-900, border-gray-300 -> dark:border-gray-700, text-gray-900 -> dark:text-gray-100
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:focus:border-yellow-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 transition-all"
             />
           </div>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full md:w-auto px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-gray-900 bg-white"
+            // Dark mode classes added: bg-white -> dark:bg-gray-900, border-gray-300 -> dark:border-gray-700, text-gray-900 -> dark:text-gray-100
+            className="w-full md:w-auto px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:focus:border-yellow-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 transition-all"
           >
             <option value="">Semua Kategori</option>
             <option value="province">Provinsi</option>
@@ -238,12 +272,14 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5 }}
-              className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+              // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden"
             >
               <DataTable
                 columns={columns}
                 data={filteredData}
                 onDelete={handleDelete}
+                // Catatan: Komponen 'DataTable' dan 'columns' perlu diperbarui untuk mendukung dark mode.
               />
             </motion.div>
           )}

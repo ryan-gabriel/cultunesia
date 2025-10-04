@@ -31,7 +31,7 @@ function shuffleMatchingPairs(pairs) {
 }
 
 export async function GET(request, context) {
-  const params = context.params;
+  const params = await context.params;
   const quizId = params["quiz-id"];
   if (!quizId) {
     return NextResponse.json({ error: "Quiz ID wajib ada" }, { status: 400 });

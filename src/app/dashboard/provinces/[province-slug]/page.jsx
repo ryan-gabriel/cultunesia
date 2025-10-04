@@ -13,7 +13,7 @@ import {
 import { ResourceTabs } from "@/components/ResourceTabs";
 import DOMPurify from "isomorphic-dompurify";
 
-// Contoh fetch function, ganti sesuai API
+// Contoh fetch function, ganti sesuai API (TIDAK BERUBAH)
 async function fetchProvinceBySlug(slug) {
   const res = await fetch(`/api/provinces/${slug}`);
   if (!res.ok) throw new Error("Gagal memuat provinsi");
@@ -46,8 +46,19 @@ const ProvincePage = () => {
   }, [slug]);
 
   if (loading)
-    return <p className="text-center py-20 text-gray-500">Memuat data...</p>;
-  if (error) return <p className="text-center py-20 text-red-500">{error}</p>;
+    // Dark mode added: text-gray-500 -> dark:text-gray-400
+    return (
+      <p className="text-center py-20 text-gray-500 dark:text-gray-400">
+        Memuat data...
+      </p>
+    );
+  if (error)
+    // Error text remains red, which works fine in dark mode
+    return (
+      <p className="text-center py-20 text-red-500">
+        {error}
+      </p>
+    );
   if (!province) return null;
 
   const resources = [
@@ -64,11 +75,13 @@ const ProvincePage = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
+      {/* Breadcrumb - Assuming 'components/ui/breadcrumb' handles its own dark mode */}
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard/provinces">Dashboard</BreadcrumbLink>
+            <BreadcrumbLink href="/dashboard/provinces">
+              Dashboard
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -80,7 +93,10 @@ const ProvincePage = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* Province Info */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div
+          // Dark mode added: bg-white -> dark:bg-gray-800
+          className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden"
+        >
           {province.image_url && (
             <div className="w-full h-64 md:h-96 relative">
               <img
@@ -91,18 +107,23 @@ const ProvincePage = () => {
             </div>
           )}
           <div className="p-6">
-            <h1 className="text-3xl font-bold mb-2">{province.name}</h1>
-            <p className="text-gray-600 mb-4">
+            {/* Dark mode added: text-gray-900 (default) -> dark:text-gray-100 */}
+            <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">
+              {province.name}
+            </h1>
+            {/* Dark mode added: text-gray-600 -> dark:text-gray-400 */}
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Populasi: {province.population.toLocaleString("id-ID")}
             </p>
             <div
-              className="text-gray-800 prose" // optional: prose utk styling typography (Tailwind Typography)
+              // Dark mode added: text-gray-800 -> dark:text-gray-300, prose -> dark:prose-invert (untuk menyesuaikan gaya tipografi TinyMCE)
+              className="text-gray-800 dark:text-gray-300 prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: clean }}
             />
           </div>
         </div>
 
-        {/* Tabs for resources */}
+        {/* Tabs for resources - Assuming 'ResourceTabs' handles its own dark mode */}
         <ResourceTabs slug={slug} />
       </main>
     </>

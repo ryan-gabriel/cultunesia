@@ -15,10 +15,16 @@ const LoadingState = () => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 text-gray-500 bg-white rounded-xl shadow-inner py-12"
+    // Dark mode classes added: bg-white -> dark:bg-gray-800, text-gray-500 -> dark:text-gray-400, shadow-inner -> dark:shadow-none
+    className="flex flex-col items-center justify-center h-64 text-gray-500 bg-white dark:bg-gray-800 rounded-xl shadow-inner dark:shadow-none py-12"
   >
+    {/* Loader color remains consistent, but can be adjusted if needed. Here, I'll assume yellow-600 works in both. */}
     <Loader2 className="w-8 h-8 animate-spin mb-4 text-yellow-600" />
-    <p className="text-lg font-medium">Memuat data provinsi...</p>
+    {/* text-gray-500 -> dark:text-gray-200 */}
+    <p className="text-lg font-medium dark:text-gray-200">
+      Memuat data provinsi...
+    </p>
+    {/* text-gray-400 -> dark:text-gray-400 (already works well) */}
     <p className="text-sm text-gray-400 mt-1">Mohon tunggu sebentar.</p>
   </motion.div>
 );
@@ -27,7 +33,8 @@ const ErrorState = ({ message }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-red-50 border border-red-200 rounded-xl text-red-700 p-8 text-center"
+    // Dark mode classes added: bg-red-50 -> dark:bg-red-950, border-red-200 -> dark:border-red-800, text-red-700 -> dark:text-red-300
+    className="flex flex-col items-center justify-center h-64 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 p-8 text-center"
   >
     <AlertCircle className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Terjadi Kesalahan</p>
@@ -41,12 +48,14 @@ const EmptyState = () => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 p-8 text-center"
+    // Dark mode classes added: bg-gray-50 -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700, text-gray-500 -> dark:text-gray-400
+    className="flex flex-col items-center justify-center h-64 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 p-8 text-center"
   >
     <Map className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Belum Ada Data Provinsi</p>
     <p className="text-md mt-2">Mulai tambahkan data provinsi pertama Anda.</p>
     <Link href={"/dashboard/provinces/create"} className="mt-6">
+      {/* Button colors remain based on 'yellow-600' which should map to '--color-primary-gold' */}
       <button className="flex items-center gap-2 px-6 py-3 font-semibold text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors shadow-md">
         <Plus size={20} />
         <span>Tambah Provinsi Baru</span>
@@ -116,25 +125,30 @@ const Page = () => {
   if (!session) return null;
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
+    // Dark mode classes added: bg-gray-50 -> dark:bg-gray-900
+    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header Halaman */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+          className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
         >
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            {/* text-gray-900 -> dark:text-gray-100 */}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Manajemen Provinsi
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
+            {/* text-gray-600 -> dark:text-gray-400 */}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Kelola data provinsi yang akan ditampilkan di seluruh platform
               Cultunesia.
             </p>
           </div>
           <Link href={"/dashboard/provinces/create"}>
+            {/* Button colors remain consistent: text-white bg-yellow-600 hover:bg-yellow-700 */}
             <button className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 font-semibold text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors shadow-md">
               <Plus size={18} />
               <span>Tambah Provinsi Baru</span>
@@ -149,15 +163,19 @@ const Page = () => {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="mb-8"
         >
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+          {/* Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700 */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 font-medium">
+              {/* text-gray-500 -> dark:text-gray-400 */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                 Total Provinsi
               </p>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">
+              {/* text-gray-900 -> dark:text-gray-100 */}
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
                 {data.length}
               </h2>
             </div>
+            {/* Icon color remains consistent */}
             <Map className="w-10 h-10 text-yellow-500 opacity-60" />
           </div>
         </motion.div>
@@ -167,18 +185,22 @@ const Page = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+          className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
         >
           <div className="relative">
+            {/* text-gray-400 -> dark:text-gray-500 */}
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
             <input
               type="text"
               placeholder="Cari provinsi berdasarkan nama..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-gray-900 transition-all"
+              // Dark mode classes added: border-gray-300 -> dark:border-gray-700, text-gray-900 -> dark:text-gray-100, focus:border-yellow-500 (can be dark:focus:border-yellow-400 if needed)
+              // Added bg-white and dark:bg-gray-900 for explicit input background
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:focus:border-yellow-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 transition-all"
             />
           </div>
         </motion.div>
@@ -198,12 +220,14 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5 }}
-              className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+              // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden"
             >
               <DataTable
                 columns={columns}
                 data={filteredData}
                 onDelete={handleDelete}
+                // Catatan: Komponen 'DataTable' dan 'columns' juga perlu diperbarui untuk mendukung dark mode secara internal.
               />
             </motion.div>
           )}

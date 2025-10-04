@@ -23,11 +23,18 @@ const LoadingState = () => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 text-gray-500 bg-white rounded-xl shadow-inner py-12"
+    // Dark mode classes added: bg-white -> dark:bg-gray-800, text-gray-500 -> dark:text-gray-400
+    className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl shadow-inner py-12"
   >
     <Loader2 className="w-8 h-8 animate-spin mb-4 text-yellow-600" />
-    <p className="text-lg font-medium">Memuat data pertanyaan...</p>
-    <p className="text-sm text-gray-400 mt-1">Mohon tunggu sebentar.</p>
+    {/* text-gray-500 (implied) -> dark:text-gray-200 for emphasis */}
+    <p className="text-lg font-medium dark:text-gray-200">
+      Memuat data pertanyaan...
+    </p>
+    {/* text-gray-400 -> dark:text-gray-500 */}
+    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+      Mohon tunggu sebentar.
+    </p>
   </motion.div>
 );
 
@@ -35,7 +42,8 @@ const ErrorState = ({ message }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-red-50 border border-red-200 rounded-xl text-red-700 p-8 text-center"
+    // Dark mode classes added: bg-red-50 -> dark:bg-red-950, border-red-200 -> dark:border-red-800, text-red-700 -> dark:text-red-300
+    className="flex flex-col items-center justify-center h-64 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 p-8 text-center"
   >
     <AlertCircle className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Terjadi Kesalahan</p>
@@ -49,7 +57,8 @@ const EmptyState = ({ quizId }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className="flex flex-col items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 p-8 text-center"
+    // Dark mode classes added: bg-gray-50 -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700, text-gray-500 -> dark:text-gray-400
+    className="flex flex-col items-center justify-center h-64 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 p-8 text-center"
   >
     <ClipboardList className="w-10 h-10 mb-4" />
     <p className="text-xl font-bold">Belum Ada Pertanyaan</p>
@@ -113,7 +122,7 @@ const Page = () => {
       const result = await res.json();
       if (!res.ok)
         throw new Error(result.error || "Gagal menghapus pertanyaan");
-      toast("Question berhasil dibuat", {
+      toast("Question berhasil dihapus", {
         duration: 3000,
       });
       setData((prev) =>
@@ -151,7 +160,8 @@ const Page = () => {
   if (!session) return null;
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
+    // Dark mode added: bg-gray-50 -> dark:bg-gray-900
+    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -159,19 +169,28 @@ const Page = () => {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
+          {/* Link Kembali */}
           <Link
             href="/dashboard/quizzes"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-4"
+            // Dark mode classes added: text-gray-600 -> dark:text-gray-400, hover:text-gray-900 -> hover:dark:text-gray-100
+            className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:dark:text-gray-100 transition-colors mb-4"
           >
             <ArrowLeft size={16} />
             Kembali ke Daftar Kuis
           </Link>
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+
+          {/* Header Konten */}
+          <div
+            // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+            className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+          >
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              {/* text-gray-900 -> dark:text-gray-100 */}
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Manajemen Pertanyaan
               </h1>
-              <p className="text-sm text-gray-600 mt-1 truncate">
+              {/* text-gray-600 -> dark:text-gray-400 */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
                 Untuk Kuis:{" "}
                 <span className="font-semibold">
                   {quizInfo?.title || "Memuat..."}
@@ -187,62 +206,63 @@ const Page = () => {
           </div>
         </motion.div>
 
+        {/* Statistik Ringkas */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500 font-medium">
-              Total Pertanyaan
-            </p>
-            <h2 className="text-3xl font-bold text-gray-900 mt-1">
-              {stats.total}
-            </h2>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500 font-medium">Pilihan Ganda</p>
-            <h2 className="text-3xl font-bold text-gray-900 mt-1">
-              {stats.multipleChoice}
-            </h2>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500 font-medium">Isian Singkat</p>
-            <h2 className="text-3xl font-bold text-gray-900 mt-1">
-              {stats.shortAnswer}
-            </h2>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500 font-medium">Menjodohkan</p>
-            <h2 className="text-3xl font-bold text-gray-900 mt-1">
-              {stats.matching}
-            </h2>
-          </div>
+          {[
+            { label: "Total Pertanyaan", value: stats.total },
+            { label: "Pilihan Ganda", value: stats.multipleChoice },
+            { label: "Isian Singkat", value: stats.shortAnswer },
+            { label: "Menjodohkan", value: stats.matching },
+          ].map((stat, index) => (
+            <div
+              key={index}
+              // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+            >
+              {/* text-gray-500 -> dark:text-gray-400 */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {stat.label}
+              </p>
+              {/* text-gray-900 -> dark:text-gray-100 */}
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+                {stat.value}
+              </h2>
+            </div>
+          ))}
         </motion.div>
 
+        {/* Search Bar dan Filter */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row items-center gap-4"
+          // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+          className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-4"
         >
           <div className="relative flex-grow w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              {/* text-gray-400 -> dark:text-gray-500 */}
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
             <input
               type="text"
               placeholder="Cari pertanyaan..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-gray-900 transition-all"
+              // Dark mode classes added: bg-white -> dark:bg-gray-900, border-gray-300 -> dark:border-gray-700, text-gray-900 -> dark:text-gray-100
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:focus:border-yellow-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 transition-all"
             />
           </div>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="w-full md:w-auto px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-gray-900 bg-white"
+            // Dark mode classes added: bg-white -> dark:bg-gray-900, border-gray-300 -> dark:border-gray-700, text-gray-900 -> dark:text-gray-100
+            className="w-full md:w-auto px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 dark:focus:border-yellow-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 transition-all"
           >
             <option value="">Semua Tipe</option>
             <option value="multiple_choice">Pilihan Ganda</option>
@@ -251,6 +271,7 @@ const Page = () => {
           </select>
         </motion.div>
 
+        {/* Panel untuk Tabel Data */}
         <AnimatePresence mode="wait">
           {loadingData ? (
             <LoadingState key="loading" />
@@ -265,12 +286,14 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5 }}
-              className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+              // Dark mode classes added: bg-white -> dark:bg-gray-800, border-gray-200 -> dark:border-gray-700
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden"
             >
               <DataTable
                 columns={columns}
                 data={filteredData}
                 onDelete={handleDelete}
+                // Catatan: Komponen 'DataTable' dan 'columns' perlu diperbarui untuk mendukung dark mode.
               />
             </motion.div>
           )}
