@@ -98,11 +98,7 @@ const AboutPage = () => {
       <section className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
-          <img
-            src="/hero-bg.jpg"
-            alt="Hero Background"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
           
           {/* Decorative Elements */}

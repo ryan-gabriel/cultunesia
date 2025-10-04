@@ -15,10 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
-// Catatan: Konstanta GOLD_DARK_MODE dan GOLD_LIGHT_MODE tidak diperlukan lagi
-// karena kita akan mengandalkan class Tailwind (text-primary-gold, dark:text-yellow-400, dll.)
-
-const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
+const ProvinceDetail = ({ provinceData }) => {
   const containerRef = useRef(null);
   const heroRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -44,8 +41,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
   const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 };
   const heroYSpring = useSpring(heroY, springConfig);
   
-  // Karena tidak ada isDarkMode, kita akan menggunakan class Tailwind sepenuhnya
-  // Asumsi: Anda memiliki warna 'primary-gold' di tailwind.config.js
   const GOLD_CLASS = 'text-primary-gold dark:text-yellow-400';
   const GOLD_BG_CLASS = 'bg-primary-gold dark:bg-yellow-400';
 
@@ -151,7 +146,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
       >
         {/* Background Image with Enhanced Overlay */}
         <div className="absolute inset-0">
-          {/* Darker/Lighter overlay based on theme */}
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-transparent z-10" />
           <motion.img
             initial={{ scale: 1.1 }}
@@ -164,7 +158,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
             alt={province?.name || "Province"}
             className="w-full h-full object-cover"
           />
-          {/* Primary Gold Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary-gold/30 via-transparent to-transparent dark:from-yellow-400/30" />
         </div>
 
@@ -254,7 +247,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
               transition={{ delay: 0.2 }}
               className="flex items-center gap-3 mb-6"
             >
-              {/* Mengganti inline style gradien dengan class Tailwind */}
               <div 
                 className="h-1 w-12 rounded-full bg-gradient-to-r from-primary-gold to-primary-gold/50 dark:from-yellow-400 dark:to-yellow-400/50"
               />
@@ -267,7 +259,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
-              // Mengganti inline style warna teks dengan class Tailwind
               className="prose prose-lg max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
               dangerouslySetInnerHTML={{
                 __html:
@@ -335,7 +326,6 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            // Mengganti inline style latar belakang dengan class Tailwind
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-primary-gold/10 dark:bg-yellow-400/10"
           >
             <Sparkles className={`w-4 h-4 ${GOLD_CLASS}`} />
@@ -354,11 +344,12 @@ const ProvinceDetail = ({ provinceData }) => { // Prop isDarkMode dihapus
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categoryCards.map((card, index) => {
             const Icon = card.icon;
-            const hasData = card.data && card.data.length > 0;
+            
+            // ===== PERUBAHAN DI SINI =====
+            // Menggunakan gambar utama provinsi untuk semua kartu.
             const imageUrl =
-              hasData && card.data[0]?.image_url
-                ? card.data[0].image_url
-                : "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&crop=center";
+              province?.image_url ||
+              "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&crop=center";
 
             return (
               <Link
