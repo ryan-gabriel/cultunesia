@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { fetchProvinceBySlug } from "@/utils/province";
 import {
   MapPin,
@@ -31,14 +31,10 @@ const convertToPNG = (file) => {
     const img = new Image();
 
     img.onload = () => {
-      // Set canvas dimensions to match image
       canvas.width = img.width;
       canvas.height = img.height;
-
-      // Draw image to canvas
       ctx.drawImage(img, 0, 0);
 
-      // Convert to PNG blob
       canvas.toBlob(
         (blob) => {
           const pngFile = new File(
@@ -71,8 +67,67 @@ export default function ProvinceForm({ slug, onSuccess }) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  
+  // 🔑 STATE BARU: Untuk menandakan apakah kita di sisi klien (sudah mount)
+  const [isClient, setIsClient] = useState(false);
 
   const isEditMode = Boolean(slug);
+
+  // 🔑 useEffect untuk menandai bahwa kita ada di sisi klien
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // 🔑 Gunakan useMemo untuk menentukan konfigurasi TinyMCE hanya di sisi klien
+  const editorInitConfig = useMemo(() => {
+    if (!isClient) return {}; // Kembalikan objek kosong di server/sebelum mount
+    
+    // Logika akses window.matchMedia hanya dieksekusi setelah isClient = true
+    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    return {
+      height: 350,
+      menubar: false,
+      // Terapkan skin dan content_css untuk mode gelap
+      skin: isDarkMode ? "oxide-dark" : "oxide",
+      content_css: isDarkMode ? "dark" : "default",
+      plugins: [
+        "advlist",
+        "autolink",
+        "lists",
+        "link",
+        "image",
+        "charmap",
+        "preview",
+        "anchor",
+        "searchreplace",
+        "visualblocks",
+        "code",
+        "fullscreen",
+        "insertdatetime",
+        "media",
+        "table",
+        "help",
+        "wordcount",
+      ],
+      toolbar: [
+        "undo redo | blocks | bold italic underline strikethrough",
+        "alignleft aligncenter alignright alignjustify",
+        "bullist numlist outdent indent | removeformat",
+        "link image media table | charmap | code preview fullscreen help",
+      ].join(" | "),
+      content_style: `
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: ${isDarkMode ? "#d1d5db" : "#374151"};
+            margin: 1rem;
+          }
+        `,
+      branding: false,
+    };
+  }, [isClient]); // Hanya re-evaluasi saat isClient berubah
 
   // Fetch province data for update (TIDAK BERUBAH)
   useEffect(() => {
@@ -332,63 +387,16 @@ export default function ProvinceForm({ slug, onSuccess }) {
         </div>
 
         {/* Description (TinyMCE) */}
-        {/* Note: Dark mode for TinyMCE requires configuration in the 'init' object, not just Tailwind classes. */}
-        <Editor
-          apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
-          value={description}
-          init={{
-            height: 350,
-            menubar: false,
-            // Add skin and content_css for dark mode support in TinyMCE
-            skin: window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "oxide-dark"
-              : "oxide",
-            content_css: window.matchMedia("(prefers-color-scheme: dark)")
-              .matches
-              ? "dark"
-              : "default",
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "preview",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "fullscreen",
-              "insertdatetime",
-              "media",
-              "table",
-              "help",
-              "wordcount",
-            ],
-            toolbar: [
-              "undo redo | blocks | bold italic underline strikethrough",
-              "alignleft aligncenter alignright alignjustify",
-              "bullist numlist outdent indent | removeformat",
-              "link image media table | charmap | code preview fullscreen help",
-            ].join(" | "),
-            // Adjust content_style for internal editor content if using light skin
-            content_style: `
-                        body { 
-                          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                          font-size: 14px;
-                          line-height: 1.6;
-                          color: #374151; /* Default text color */
-                          margin: 1rem;
-                        }
-                        .dark body { 
-                          color: #d1d5db; /* Dark mode text color */
-                        }
-                      `,
-            branding: false,
-          }}
-          onEditorChange={(content) => setDescription(content)}
-        />
+        {/* Menggunakan isClient untuk memastikan init config ada di client */}
+        {isClient && (
+          <Editor
+            apiKey="t6uqhm6nrpzbgdcfu2k7j70z43fssve9u0g312x71st0e2f7"
+            value={description}
+            init={editorInitConfig} // 🔑 Menggunakan config yang sudah dihitung di useMemo
+            onEditorChange={(content) => setDescription(content)}
+          />
+        )}
+        
 
         {/* Image Upload */}
         <div className="space-y-3">
