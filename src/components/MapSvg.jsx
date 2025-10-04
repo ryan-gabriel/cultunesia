@@ -11,7 +11,8 @@ import countriesData from "@/data/countryBorders.json";
 import otherCountriesData from "@/data/otherCountries.json";
 import Link from "next/link";
 
-const MapSvg = ({ provincesFromDB = [] }) => {
+// Hapus provincesFromDB dari props
+const MapSvg = () => {
   const [hoveredProvince, setHoveredProvince] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +22,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
   const tooltipRef = useRef({});
 
   useEffect(() => {
-    // GSAP Animation
+    // GSAP Animation ... (kode animasi tidak berubah)
     const provinceElements = Object.values(gRefs.current);
     const otherElements = Object.values(otherRefs.current);
 
@@ -67,33 +68,15 @@ const MapSvg = ({ provincesFromDB = [] }) => {
 
   const handleMouseEnter = (e, provinceFromJSON) => {
     console.log("Mouse entered province:", provinceFromJSON.name);
-    console.log("provincesFromDB:", provincesFromDB);
-
-    // Check if provincesFromDB is valid
-    if (!provincesFromDB || !Array.isArray(provincesFromDB)) {
-      console.warn(
-        "Data provinsi (provincesFromDB) tidak tersedia atau bukan array."
-      );
-      // Still show tooltip with basic info from JSON
-      setHoveredProvince({
-        slug: provinceFromJSON.slug,
-        name: provinceFromJSON.name,
-        description: "Deskripsi tidak tersedia.",
-        population: 0,
-        x: e.clientX,
-        y: e.clientY,
-      });
-      return;
-    }
-
-    const dbData = provincesFromDB.find((p) => p.slug === provinceFromJSON.id);
-    console.log("Found DB data:", dbData);
-
+    
+    // Langsung gunakan provinceFromJSON karena sudah diasumsikan mengandung
+    // semua data yang digabungkan (slug, name, paths, description, population, image_url)
     setHoveredProvince({
       slug: provinceFromJSON.slug,
       name: provinceFromJSON.name,
-      description: dbData?.description || "Deskripsi tidak tersedia.",
-      population: dbData?.population || 0,
+      description: provinceFromJSON.description || "Deskripsi tidak tersedia.",
+      population: provinceFromJSON.population || 0,
+      image_url: provinceFromJSON.image_url || null, // Ambil image_url langsung dari data lokal
       x: e.clientX,
       y: e.clientY,
     });
@@ -125,7 +108,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
   }, [loading, hoveredProvince]);
 
   return (
-    <div className="relative w-full h-fit dark:bg-gray-800/95">
+    <div className="relative w-full h-fit bg-transparent border shadow">
       <svg
         ref={svgRef}
         xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +205,6 @@ const MapSvg = ({ provincesFromDB = [] }) => {
       </svg>
 
       {/* Tooltip */}
-      
       {!loading && hoveredProvince && (
         <div
           ref={tooltipRef}
@@ -231,7 +213,7 @@ const MapSvg = ({ provincesFromDB = [] }) => {
             // Cek apakah mouse ada di sebelah kanan layar
             left:
               hoveredProvince.x > window.innerWidth / 2
-                ? hoveredProvince.x - 280 // tampil ke kiri cursor
+                ? hoveredProvince.x - 280 // tampil ke kiri cursor (280 = w-64 + padding/margin)
                 : hoveredProvince.x + 20, // tampil ke kanan cursor
 
             // Cek apakah mouse ada di bagian bawah layar
@@ -241,6 +223,16 @@ const MapSvg = ({ provincesFromDB = [] }) => {
                 : hoveredProvince.y + 10, // tampil ke bawah cursor
           }}
         >
+          {/* AREA UNTUK IMAGE */}
+          {hoveredProvince.image_url && (
+            <img
+              src={hoveredProvince.image_url}
+              alt={`Peta ${hoveredProvince.name}`}
+              className="w-full h-20 object-cover rounded-lg mb-3 border border-gray-200 dark:border-gray-700"
+            />
+          )}
+          {/* AKHIR AREA IMAGE */}
+
           <h3 className="font-bold text-lg">{hoveredProvince.name}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3">
             {hoveredProvince.description}
@@ -251,7 +243,6 @@ const MapSvg = ({ provincesFromDB = [] }) => {
           </p>
         </div>
       )}
-
     </div>
   );
 };
