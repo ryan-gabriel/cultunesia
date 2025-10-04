@@ -3,12 +3,11 @@
 import Navbar from "@/components/Navbar/Navbar";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link"; // 1. Impor komponen Link
 import {
   Compass,
   Palette,
   BookOpen,
-  Globe,
-  Image,
   Users,
   Sparkles,
   ArrowRight,
@@ -16,6 +15,8 @@ import {
   Target,
   Zap,
   Shield,
+  Utensils, // Ditambahkan untuk ikon kuliner
+  Brain,    // Ditambahkan untuk ikon kuis
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,63 +31,63 @@ const AboutPage = () => {
   const features = [
     {
       icon: Compass,
-      title: "Eksplorasi Budaya",
-      desc: "Kenali keragaman budaya Indonesia dari Sabang sampai Merauke.",
-      gradient: "from-amber-500 to-yellow-600",
-    },
-    {
-      icon: Palette,
-      title: "Karya & Tradisi",
-      desc: "Ruang untuk seni, musik, dan tradisi lokal.",
-      gradient: "from-orange-500 to-amber-600",
-    },
-    {
-      icon: BookOpen,
-      title: "Cerita Nusantara",
-      desc: "Kumpulan kisah inspiratif dari berbagai daerah.",
-      gradient: "from-yellow-500 to-amber-500",
-    },
-    {
-      icon: Globe,
-      title: "Tur Virtual",
-      desc: "Pengalaman imersif menjelajah destinasi budaya.",
-      gradient: "from-amber-600 to-orange-600",
-    },
-    {
-      icon: Image,
-      title: "Koleksi Visual",
-      desc: "Dokumentasi foto, lukisan, dan karya seni.",
-      gradient: "from-yellow-600 to-amber-600",
+      title: "Wisata & Destinasi",
+      desc: "Jelajahi keindahan alam, situs bersejarah, dan tempat-tempat ikonik di setiap provinsi.",
+      gradient: "from-blue-500 to-teal-600",
     },
     {
       icon: Users,
-      title: "Komunitas",
-      desc: "Terhubung dengan komunitas pecinta budaya.",
-      gradient: "from-orange-600 to-amber-700",
+      title: "Suku & Etnis",
+      desc: "Kenali keberagaman suku, tradisi, dan adat istiadat yang membentuk kekayaan budaya Indonesia.",
+      gradient: "from-purple-500 to-indigo-600",
+    },
+    {
+      icon: Utensils,
+      title: "Kuliner Khas",
+      desc: "Cicipi cita rasa otentik dari Sabang sampai Merauke melalui ragam kuliner tradisionalnya.",
+      gradient: "from-orange-500 to-red-600",
+    },
+    {
+      icon: BookOpen,
+      title: "Bahasa Daerah",
+      desc: "Dengarkan dan pelajari kekayaan linguistik dari berbagai penjuru nusantara yang unik dan beragam.",
+      gradient: "from-emerald-500 to-green-600",
+    },
+    {
+      icon: Sparkles,
+      title: "Fakta Menarik",
+      desc: "Temukan fakta-fakta unik dan mengejutkan tentang sejarah, budaya, dan kehidupan di setiap provinsi.",
+      gradient: "from-yellow-500 to-amber-500",
+    },
+    {
+      icon: Brain,
+      title: "Kuis Pengetahuan",
+      desc: "Uji wawasanmu tentang budaya dan keragaman provinsi di Indonesia melalui kuis yang interaktif.",
+      gradient: "from-pink-500 to-rose-600",
     },
   ];
 
   const coreComponents = [
-    "Eksplorasi",
-    "Tradisi",
-    "Karya",
-    "Cerita",
-    "Tur Virtual",
-    "Komunitas",
+    "Destinasi Wisata",
+    "Kuliner Khas",
+    "Suku & Budaya",
+    "Bahasa Daerah",
+    "Fakta Unik",
+    "Kuis Interaktif",
   ];
 
   const missionPoints = [
     {
       icon: Zap,
-      text: "Materi ringkas dan mudah diakses",
+      text: "Menyajikan informasi budaya yang ringkas, akurat, dan mudah diakses.",
     },
     {
       icon: Heart,
-      text: "Merayakan keragaman budaya lokal",
+      text: "Merayakan dan mempromosikan keragaman budaya dari setiap provinsi.",
     },
     {
       icon: Shield,
-      text: "Kolaborasi terbuka dengan komunitas",
+      text: "Menyediakan platform pembelajaran budaya yang seru dan menyenangkan.",
     },
   ];
 
@@ -96,23 +97,14 @@ const AboutPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-white via-amber-50/30 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Hero Section */}
       <section className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden">
-        {/* Background Image with Overlay */}
         <div className="absolute inset-0">
-          <img
-            src="/hero-bg.jpg"
-            alt="Hero Background"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
-          
-          {/* Decorative Elements */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute top-20 right-20 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl" />
             <div className="absolute bottom-20 left-20 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl" />
           </div>
         </div>
 
-        {/* Content */}
         <motion.div
           className="relative z-10 text-center max-w-4xl mx-auto px-6"
           initial={mounted ? { opacity: 0, y: 30 } : false}
@@ -126,7 +118,7 @@ const AboutPage = () => {
           >
             <Badge className="mb-6 bg-gradient-to-r from-amber-500 to-yellow-600 text-white border-0 px-4 py-2 text-sm font-semibold shadow-lg">
               <Sparkles className="w-4 h-4 mr-2" />
-              Platform Budaya Digital
+              Ensiklopedia Budaya Digital
             </Badge>
           </motion.div>
 
@@ -140,16 +132,14 @@ const AboutPage = () => {
               Cultunesia
             </span>
           </motion.h1>
-
+          
           <motion.p
             className="text-lg md:text-xl text-gray-100 mb-8 leading-relaxed max-w-3xl mx-auto"
             initial={mounted ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
-            Platform digital untuk memperkenalkan, melestarikan, dan menginspirasi
-            masyarakat melalui kekayaan budaya Indonesia. Eksplorasi karya, tradisi,
-            dan cerita budaya nusantara dengan tampilan modern namun elegan.
+            Jelajahi kekayaan setiap provinsi di Indonesia dalam satu platform. Temukan informasi mendalam tentang destinasi wisata, kuliner khas, suku, bahasa daerah, hingga fakta menarik yang dikemas secara modern dan interaktif.
           </motion.p>
 
           <motion.div
@@ -158,26 +148,33 @@ const AboutPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7 }}
           >
-            <motion.button
-              className="px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-xl font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 transition-all duration-300 shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 flex items-center gap-2 border border-amber-400/20"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Mulai Eksplorasi
-              <ArrowRight className="w-5 h-5" />
-            </motion.button>
-            <motion.button
-              className="px-8 py-4 bg-white/90 backdrop-blur-sm text-gray-900 rounded-xl font-bold hover:bg-white transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Tentang Kami
-              <BookOpen className="w-5 h-5" />
-            </motion.button>
+            {/* --- PERUBAHAN DI SINI --- */}
+            <Link href="/" passHref>
+              <motion.button
+                className="px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white rounded-xl font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 transition-all duration-300 shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 flex items-center gap-2 border border-amber-400/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Mulai Eksplorasi
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </Link>
+            
+            {/* --- DAN DI SINI --- */}
+            <Link href="/about" passHref>
+              <motion.button
+                className="px-8 py-4 bg-white/90 backdrop-blur-sm text-gray-900 rounded-xl font-bold hover:bg-white transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Tentang Kami
+                <BookOpen className="w-5 h-5" />
+              </motion.button>
+            </Link>
+
           </motion.div>
         </motion.div>
 
-        {/* Scroll Indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
           initial={mounted ? { opacity: 0 } : false}
@@ -192,7 +189,6 @@ const AboutPage = () => {
 
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-6 py-24 relative">
-        {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-amber-200/10 dark:bg-amber-500/5 rounded-full blur-3xl" />
         </div>
@@ -208,13 +204,13 @@ const AboutPage = () => {
             Fitur Utama
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-            Semua yang Anda butuhkan untuk{" "}
+            Jelajahi Setiap Sudut {" "}
             <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
               Budaya Nusantara
             </span>
           </h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Fitur lengkap untuk mengeksplorasi dan melestarikan warisan budaya Indonesia
+            Kami menyajikan kekayaan budaya Indonesia melalui berbagai fitur yang informatif dan menarik.
           </p>
         </motion.div>
 
@@ -231,8 +227,7 @@ const AboutPage = () => {
               >
                 <Card className="h-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl hover:border-amber-400/50 dark:hover:border-amber-600/50 transition-all duration-300 group overflow-hidden">
                   <CardContent className="p-6 relative">
-                    {/* Gradient background on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
                     
                     <div className="relative z-10">
                       <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
@@ -266,10 +261,10 @@ const AboutPage = () => {
               <CardContent className="p-8">
                 <Badge className="mb-4 bg-amber-600 text-white border-0">
                   <Zap className="w-3 h-3 mr-2" />
-                  Arsitektur Produk
+                  Kategori Konten
                 </Badge>
                 <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-                  Komponen Inti
+                  Pilar Pengetahuan
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {coreComponents.map((comp, i) => (
@@ -300,11 +295,10 @@ const AboutPage = () => {
                   Misi Kami
                 </Badge>
                 <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-                  Pelestarian Budaya lewat Teknologi
+                  Edukasi Budaya Lewat Teknologi
                 </h2>
                 <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
-                  Cultunesia menghubungkan pembelajaran, arsip budaya, dan media
-                  kreatif agar lebih dekat dengan generasi muda.
+                  Misi kami adalah menjadikan pengetahuan budaya Indonesia mudah diakses, menyenangkan, dan relevan bagi semua orang melalui platform digital.
                 </p>
                 <div className="space-y-4">
                   {missionPoints.map((point, i) => {
@@ -332,22 +326,6 @@ const AboutPage = () => {
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-600 text-center text-white py-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10" />
-        <motion.div
-          className="relative z-10"
-          initial={mounted ? { opacity: 0 } : false}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="text-sm font-medium flex items-center justify-center gap-2">
-            <Heart className="w-4 h-4 fill-current" />
-            © 2025 Cultunesia — Menjaga Warisan, Menginspirasi Masa Depan.
-          </p>
-        </motion.div>
-      </footer>
     </div>
   </>
   );
