@@ -99,7 +99,7 @@ export async function POST(req, context) {
 
 // =================== PUT ===================
 
-const RESOURCES_WITHOUT_IMAGE = ["funfacts"];
+const RESOURCES_WITHOUT_IMAGE = ["funfacts", "languages"];
 
 export async function PUT(req, context) {
   const { provinceSlug, resourceSlug } = await context.params;
@@ -229,6 +229,7 @@ export async function DELETE(req, context) {
     .eq("id", id)
     .eq("province_slug", provinceSlug)
     .maybeSingle();
+
 
   if (fetchError || !resourceItem) {
     return NextResponse.json(

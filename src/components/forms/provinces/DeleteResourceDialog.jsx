@@ -31,7 +31,9 @@ export const DeleteResourceDialog = ({
       const res = await fetch(urlEndpoint, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: itemId }),
+        body: JSON.stringify({
+          id: /^\d+$/.test(itemId) ? Number(itemId) : itemId,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal menghapus data");
