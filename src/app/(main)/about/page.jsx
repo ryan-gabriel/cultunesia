@@ -11,17 +11,17 @@ import { Users } from "lucide-react";
 const teamMembers = [
   {
     name: "Muhamad Abdul Azis",
-    role: "Frontend Developer",
+    role: "Desainer Grafis & UI/UX",
     image: "/team/azis.png",
   },
   {
-    name: "Ryan Gabriel",
-    role: "Backend Developer",
+    name: "Ryan Gabriel Siringoringo",
+    role: "Full-Stack Engineer",
     image: "/team/ryan.png",
   },
   {
     name: "Muhammad Rafif Zharif",
-    role: "Project Manager",
+    role: "Analis Kebutuhan & Manajer Proyek",
     image: "/team/rafif.png",
   },
 ];
