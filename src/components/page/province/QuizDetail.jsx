@@ -13,7 +13,7 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
   const [dropZones, setDropZones] = useState({});
   const containerRef = useRef(null);
   const [userId, setUserId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // State untuk loading submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const questions = data?.questions || [];
 
@@ -51,6 +51,7 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
     e.dataTransfer.dropEffect = "move";
   };
 
+  // FUNGSI YANG DIPERBAIKI - hanya menghapus dari drop zone di question yang sama
   const handleDrop = (e, pairId, questionId) => {
     e.preventDefault();
     if (!draggedItem || draggedItem.questionId !== questionId || feedback)
@@ -59,10 +60,11 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
     const dropKey = `${questionId}-${pairId}`;
     const draggedText = draggedItem.rightText;
 
-    // Hapus item dari zona drop lain jika sudah ada
+    // PERBAIKAN: Hapus item HANYA dari zona drop di question yang SAMA
     const newDropZones = { ...dropZones };
     Object.keys(newDropZones).forEach((key) => {
-      if (newDropZones[key] === draggedText) {
+      // Hanya hapus jika key berasal dari question yang sama DAN memiliki item yang sama
+      if (key.startsWith(`${questionId}-`) && newDropZones[key] === draggedText) {
         newDropZones[key] = null;
       }
     });
@@ -73,6 +75,15 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
 
     // Update state jawaban
     const newAnswers = { ...answers };
+    
+    // Hapus jawaban lama di question yang sama
+    Object.keys(newAnswers).forEach((key) => {
+      if (key.startsWith(`${questionId}-`) && newAnswers[key] === draggedText) {
+        delete newAnswers[key];
+      }
+    });
+    
+    // Set jawaban baru
     newAnswers[dropKey] = draggedText;
     setAnswers(newAnswers);
 
@@ -93,10 +104,9 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return; // Mencegah double submit
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
-    // Transformasi jawaban untuk API
     const submission = questions.map((q) => {
       if (q.type === "matching") {
         const matchingAnswers = q.matching_pairs.map((pair) => ({
@@ -120,7 +130,7 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
       const bodyPayload = {
         quiz_id: data.quiz.quiz_id,
         answers: submission,
-        ...(isDaily && userId ? { user_id: userId } : {}), // Hanya sertakan userId jika daily quiz
+        ...(isDaily && userId ? { user_id: userId } : {}),
       };
 
       const res = await fetch(submitUrl, {
@@ -204,19 +214,12 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
     return answeredCount < totalRequiredAnswers;
   };
 
-  // ==========================================================
-  // MODIFIKASI: FUNGSI UNTUK MENENTUKAN STATUS KEBENARAN PERTANYAAN MATCHING
-  // ==========================================================
   const getMatchingQuestionStatus = (q, qFeedback) => {
     if (!qFeedback || q.type !== "matching" || !qFeedback.pairs) {
-      // Hanya berlaku untuk matching dengan feedback
       return { isCorrect: qFeedback?.isCorrect ?? false, scoreDisplay: null };
     }
 
-    // Cek apakah SEMUA pasangan benar (skor harus sama dengan total poin)
     const allCorrect = qFeedback.score === q.points;
-
-    // Tentukan tampilan skor: Jika semua benar 1/1, jika ada yang salah 0/1
     const finalScore = allCorrect ? q.points : 0;
 
     return {
@@ -224,7 +227,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
       scoreDisplay: `${finalScore}/${q.points}`,
     };
   };
-  // ==========================================================
 
   return (
     <div
@@ -232,7 +234,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
       className="space-y-6 max-h-[80vh] overflow-y-auto p-4 sm:p-6 md:max-w-full mx-auto"
       style={{ pointerEvents: "auto" }}
     >
-      {/* Quiz Header (unchanged) */}
       {data?.quiz && (
         <div className="bg-gradient-to-r from-primary-gold/10 via-primary-gold/5 to-transparent dark:from-primary-gold/20 dark:via-primary-gold/10 dark:to-transparent p-6 rounded-xl border border-primary-gold/30 dark:border-primary-gold/40">
           <div className="flex items-center gap-3 mb-2">
@@ -250,7 +251,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
         </div>
       )}
 
-      {/* Score Card (updated to fixed points format) */}
       {feedback && (
         <Card className="border-2 border-primary-gold/50 bg-gradient-to-br from-primary-gold/10 via-transparent to-primary-gold/5 dark:from-primary-gold/20 dark:via-transparent dark:to-primary-gold/10 shadow-lg">
           <CardContent className="pt-6">
@@ -307,7 +307,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
         </Card>
       )}
 
-      {/* Questions */}
       {questions.map((q, idx) => {
         const qFeedback = feedback?.results.find(
           (r) => r.question_id === q.question_id
@@ -321,7 +320,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
               : null,
         };
 
-        // Override status for Matching questions
         if (q.type === "matching") {
           questionStatus = getMatchingQuestionStatus(q, qFeedback);
         }
@@ -378,7 +376,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Multiple Choice (unchanged) */}
               {q.type === "multiple_choice" && (
                 <div className="flex flex-col space-y-2">
                   {q.options.map((opt) => {
@@ -450,7 +447,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
                 </div>
               )}
 
-              {/* Short Answer (unchanged) */}
               {q.type === "short_answer" && (
                 <div className="space-y-3">
                   <input
@@ -529,7 +525,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
                 </div>
               )}
 
-              {/* Matching (partial score kept in detail, but main status is all-or-nothing) */}
               {q.type === "matching" && (
                 <div className="space-y-4">
                   <div className="mb-4">
@@ -667,7 +662,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
                     })}
                   </div>
 
-                  {/* Matching Feedback Detail (Score detail kept) */}
                   {feedback && qFeedback && qFeedback.pairs && (
                     <div
                       className={`mt-4 p-4 rounded-lg border-2 ${
@@ -752,7 +746,6 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
         );
       })}
 
-      {/* Submit Button (unchanged) */}
       {!feedback && (
         <div className="w-full p-4 border-t bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800/80 shadow-2xl">
           <Button
