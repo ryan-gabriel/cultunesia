@@ -55,7 +55,7 @@ const INITIAL_MESSAGES = [
 
 const ChatMessage = ({ message }) => {
   // Hanya menampilkan pesan role 'user' dan 'assistant'
-  if (message.role === 'system') return null; 
+  if (message.role === "system") return null;
 
   const isUser = message.role === "user";
 
@@ -76,7 +76,7 @@ const ChatMessage = ({ message }) => {
     <div className="w-8 h-8 flex justify-center items-center flex-shrink-0 rounded-full overflow-hidden bg-white dark:bg-gray-700 border">
       {/* Pastikan Logo Short.svg ada di folder public */}
       <Image
-        src="/Logo Short.svg" 
+        src="/Logo Short.svg"
         alt="Cultunesia Logo"
         width={20}
         height={20}
@@ -100,7 +100,9 @@ const ChatMessage = ({ message }) => {
         >
           {isUser ? "Anda" : "Cultunesia"}
         </p>
-        <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed"> {/* Penyesuaian text size di dalam prose */}
+        <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed">
+          {" "}
+          {/* Penyesuaian text size di dalam prose */}
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {message.content}
           </ReactMarkdown>
@@ -120,15 +122,20 @@ const GroqChatbot = () => {
   const [loading, setLoading] = useState(false);
 
   // Perubahan: Menggunakan div sebagai ref untuk ScrollArea
-  const chatAreaRef = useRef(null); 
+  const chatAreaRef = useRef(null);
 
   // Auto-scroll ke bawah saat pesan bertambah
+  const scrollRef = useRef(null);
+
   useEffect(() => {
-    if (chatAreaRef.current) {
-      setTimeout(() => {
-        // Menggunakan properti scrollHeight dan scrollTop dari elemen div
-        chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
-      }, 100);
+    const viewport = scrollRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    );
+    if (viewport) {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [messages]);
 
@@ -140,7 +147,7 @@ const GroqChatbot = () => {
 
     const userMessage = { role: "user", content: input.trim() };
     // Filter out system message to ensure only visible messages update the UI immediately
-    const messagesToShow = messages.filter(msg => msg.role !== 'system');
+    const messagesToShow = messages.filter((msg) => msg.role !== "system");
     const newMessages = [...messages, userMessage];
 
     setMessages(newMessages); // Set state with all messages (including system)
@@ -183,29 +190,37 @@ const GroqChatbot = () => {
 
         // Pastikan kita menambahkannya ke state messages
         setMessages((prevMessages) => {
-           // Temukan index pesan user yang baru saja dikirim
-           const userMsgIndex = prevMessages.findIndex(m => m.content === userMessage.content && m.role === 'user');
-           
-           // Jika ditemukan, pastikan error message ditambahkan setelahnya
-           if (userMsgIndex !== -1) {
-              return [
-                ...prevMessages,
-                {
-                  role: "assistant",
-                  content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(0, 100)}... Cek konsol browser untuk detail error.`,
-                },
-              ];
-           } else {
-             // Fallback jika pesan user tidak ditemukan (meski seharusnya tidak terjadi)
-             return [
-               ...prevMessages,
-               { role: "user", content: userMessage.content },
-               {
-                  role: "assistant",
-                  content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(0, 100)}... Cek konsol browser untuk detail error.`,
-               },
-             ];
-           }
+          // Temukan index pesan user yang baru saja dikirim
+          const userMsgIndex = prevMessages.findIndex(
+            (m) => m.content === userMessage.content && m.role === "user"
+          );
+
+          // Jika ditemukan, pastikan error message ditambahkan setelahnya
+          if (userMsgIndex !== -1) {
+            return [
+              ...prevMessages,
+              {
+                role: "assistant",
+                content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(
+                  0,
+                  100
+                )}... Cek konsol browser untuk detail error.`,
+              },
+            ];
+          } else {
+            // Fallback jika pesan user tidak ditemukan (meski seharusnya tidak terjadi)
+            return [
+              ...prevMessages,
+              { role: "user", content: userMessage.content },
+              {
+                role: "assistant",
+                content: `[Gagal] Kesalahan dari server proxy. ${apiError.substring(
+                  0,
+                  100
+                )}... Cek konsol browser untuk detail error.`,
+              },
+            ];
+          }
         });
         return;
       }
@@ -240,16 +255,14 @@ const GroqChatbot = () => {
       <div className="flex w-full min-h-screen bg-white dark:bg-gray-950 justify-center items-start p-4 sm:p-6 transition-colors duration-500 -mb-20">
         {/* Chat Card: Menggunakan tinggi yang responsif */}
         <div className="w-full max-w-3xl h-full min-h-[90vh] sm:min-h-[85vh] lg:h-[85vh] flex flex-col shadow-2xl rounded-3xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-shadow duration-500">
-          
           {/* Header */}
           <div className="border-b border-gray-100 dark:border-gray-800 p-4 sm:p-6 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <Bot className="w-6 h-6 text-primary-gold animate-bounce-slow" />
               <h1 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50">
                 Cultunesia Bot{" "}
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline"> 
-                  {/* Menyembunyikan di layar sangat kecil */}
-                  | Budaya Indonesia
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline">
+                  {/* Menyembunyikan di layar sangat kecil */}| Budaya Indonesia
                 </span>
               </h1>
             </div>
@@ -265,10 +278,10 @@ const GroqChatbot = () => {
           <div className="flex flex-col flex-grow min-h-0">
             {/* ScrollArea: flex-grow dan min-h-0 sangat penting di sini */}
             <ScrollArea
-              ref={chatAreaRef}
+              ref={scrollRef}
               className="flex-grow min-h-0 p-0 bg-gray-50 dark:bg-gray-800 transition-colors duration-300"
             >
-              <div className="space-y-4 py-4"> {/* Menambahkan padding vertikal di dalam scrollarea */}
+              <div className="space-y-4 py-4">
                 {messages.map(
                   (msg, index) =>
                     msg.role !== "system" && (

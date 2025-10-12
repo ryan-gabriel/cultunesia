@@ -754,7 +754,7 @@ export default function QuizDetail({ data, submitUrl, isDaily = false }) {
 
       {/* Submit Button (unchanged) */}
       {!feedback && (
-        <div className="sticky bottom-0 left-0 right-0 p-4 border-t bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800/80 shadow-2xl">
+        <div className="w-full p-4 border-t bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800/80 shadow-2xl">
           <Button
             onClick={handleSubmit}
             disabled={isSubmitDisabled()}
