@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function NotFound() {
   const titleRef = useRef(null);
@@ -70,14 +71,14 @@ export default function NotFound() {
     <div className="flex flex-col items-center justify-center h-screen text-center px-6 
                     bg-gradient-to-b from-white to-gray-100 
                     dark:from-gray-950 dark:to-gray-900">
-      {/* Logo Placeholder */}
-      <div
-        ref={logoRef}
-        className="mb-10 w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center shadow-md"
-      >
-        {/* Ganti ini dengan <Image src="/logo.png" ... /> */}
-        <span className="text-gray-500 dark:text-gray-400 text-sm">Logo</span>
-      </div>
+      <Image
+          ref={logoRef}
+          src="/Logo Full.svg"
+          alt="Cultunesia Logo"
+          width={120}
+          height={120}
+          className="w-80 mb-6 relative z-10 drop-shadow-md"
+        />
 
       {/* 404 */}
       <h1
