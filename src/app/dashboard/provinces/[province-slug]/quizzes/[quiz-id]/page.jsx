@@ -1,22 +1,5 @@
 "use client";
 
-// import { useParams } from "next/navigation";
-// import React from "react";
-
-// const page = () => {
-//   const params = useParams();
-
-//   return (
-//     <div>
-//       quiz : {params["province-slug"]} {params["quiz-id"]}
-//     </div>
-//   );
-// };
-
-// export default page;
-
-"use client";
-
 import { columns } from "@/components/dataTable/questions/columns";
 import { DataTable } from "@/components/dataTable/questions/data-table";
 import { Button } from "@/components/ui/button";

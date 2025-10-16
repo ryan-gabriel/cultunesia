@@ -26,7 +26,7 @@ import MapSvg from "@/components/MapSvg";
 // --- 🗺️ MAP CONSTANTS ---
 const MAP_WIDTH = 1875.5;
 const MAP_HEIGHT = 1000;
-const MIN_SCALE_ZOOM = 0.1;
+const MIN_SCALE_ZOOM = 0.6;
 const MAX_SCALE_ZOOM = 10;
 const ZOOM_FACTOR = 1.3;
 
