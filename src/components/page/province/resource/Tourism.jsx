@@ -234,7 +234,13 @@ export default function Tourism({ data }) {
                           </TabsList>
                         </div>
                         <TabsContent value="description" className="p-6 sm:p-8">
-                           <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: selectedTour.description }}/>
+                           <div
+                            className="prose prose-lg dark:prose-invert max-w-none 
+                            first-letter:text-7xl first-letter:font-bold 
+                            first-letter:text-amber-500 first-letter:mr-3 first-letter:float-left"
+                            dangerouslySetInnerHTML={{ __html: selectedTour.description }}
+                          />
+
                         </TabsContent>
                         <TabsContent value="maps" className="p-4 sm:p-6">
                             {mounted && (selectedTour.street_view_url || selectedTour.maps_url) ? (

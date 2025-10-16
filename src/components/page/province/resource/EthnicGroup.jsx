@@ -204,7 +204,7 @@ export default function EthnicGroup({ data }) {
                           transition={{ duration: 0.6 }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                        
+
                         {/* Content Overlay */}
                         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
                           <motion.div
@@ -242,8 +242,17 @@ export default function EthnicGroup({ data }) {
                               Tentang Suku
                             </h2>
                           </div>
+
                           <div
-                            className="prose prose-lg dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-a:text-amber-600 dark:prose-a:text-amber-400 prose-strong:text-gray-900 dark:prose-strong:text-white"
+                            className={`
+                              prose prose-lg dark:prose-invert max-w-none
+                              prose-headings:text-gray-900 dark:prose-headings:text-white
+                              prose-p:text-gray-700 dark:prose-p:text-gray-300
+                              prose-a:text-amber-600 dark:prose-a:text-amber-400
+                              prose-strong:text-gray-900 dark:prose-strong:text-white
+                              first-letter:text-7xl first-letter:font-bold first-letter:text-amber-500
+                              first-letter:mr-3 first-letter:float-left
+                            `}
                             dangerouslySetInnerHTML={{
                               __html: selectedGroup.description,
                             }}
