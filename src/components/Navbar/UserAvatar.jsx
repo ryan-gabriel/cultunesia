@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings, User } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
 
 export default function UserAvatar() {
   const { profile, session, loading } = useAuth();
@@ -58,8 +59,10 @@ export default function UserAvatar() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <Link href={"/settings"}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />

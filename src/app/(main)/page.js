@@ -395,26 +395,21 @@ export default function Home() {
 
   // --- NEW COMPONENT: MobileProvinceLink (Top-left button) ---
   const MobileProvinceLink = () => (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.6 }}
-      className="absolute top-4 left-4 z-30" // Positioned at top-left
-    >
+    <div className="absolute top-4 left-4 z-30">
       <Link href="/provinces" passHref>
         <Button
           size="lg"
           className="h-12 px-5 font-semibold rounded-xl shadow-lg backdrop-blur-md 
-               bg-primary-gold text-white 
-               hover:brightness-90 
-               dark:bg-primary-gold
-               dark:hover:brightness-110"
+             bg-primary-gold text-white 
+             hover:brightness-90 
+             dark:bg-primary-gold
+             dark:hover:brightness-110"
         >
           <List className="w-5 h-5 mr-2" />
           <span>Daftar Provinsi</span>
         </Button>
       </Link>
-    </motion.div>
+    </div>
   );
 
   // --- Components (MobileControls and DesktopControls remain as is) ---
